@@ -1,0 +1,1327 @@
+import React, { useState, useMemo } from 'react';
+import { Home, MapPin, Utensils, BookOpen, User, Activity, ChevronRight, ArrowLeft, Star, Heart, AlertCircle, ThumbsUp, Search, Info, X, Calendar, PieChart, PenTool, Save, MessageSquareQuote, PlayCircle, Minimize2, Maximize2, ChevronDown, MessageCircle, Send, MoreVertical, ExternalLink } from 'lucide-react';
+
+// --- Mock Data (데이터) ---
+
+const DISEASES = {
+  diabetes: { label: '당뇨', color: 'bg-blue-100 text-blue-800', border: 'border-blue-200', text: 'text-blue-600' },
+  hyperlipidemia: { label: '고지혈증', color: 'bg-yellow-100 text-yellow-800', border: 'border-yellow-200', text: 'text-yellow-600' },
+  hypertension: { label: '고혈압', color: 'bg-rose-100 text-rose-800', border: 'border-rose-200', text: 'text-rose-600' }
+};
+
+const RESTAURANTS = [
+  {
+    id: 1,
+    name: "한다솥",
+    type: "한식",
+    distance: "10m",
+    rating: 4.9,
+    image: "🍚",
+    menus: [
+      { name: "갈비솥밥", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "포화지방이 매우 높은 고지방 육류예요. 나트륨과 당분이 높을 가능성이 크기에, 식후 혈당 상승이 위험해요!" },
+      { name: "대게솥밥", tags: [{ text: "당뇨, 고지혈증 추천!", type: "good" }, { text: "고혈압 비추천!", type: "bad" }], reason: "대게는 오메가-3가 풍부하지만 내장과 소스, 장류가 들어가면 콜레스테롤이 높고 나트륨이 높아요!" },
+      { name: "연어솥밥", tags: [{ text: "모두 추천!", type: "good" }], reason: "연어는 오메가-3 지방산이 풍부하여 심혈관 건강에 좋아요. 전체적으로 단백질이 높고 포화지방이 낮아서 모든 질환에 추천해요!" },
+      { name: "화덕 고등어구이와 계절솥밥", tags: [{ text: "모두 추천!", type: "good" }], reason: "등푸른 생선은 오메가-3 지방산이 풍부해요! 젓갈과 장아찌 반찬은 나트륨이 높아 고혈압 환자는 섭취에 주의하세요!" },
+      { name: "화덕 삼치구이와 계절솥밥", tags: [{ text: "모두 추천!", type: "good" }], reason: "등푸른 생선은 오메가-3 지방산이 풍부해요! 젓갈과 장아찌 반찬은 나트륨이 높아 고혈압 환자는 섭취에 주의하세요!" },
+    ]
+  },
+  {
+    id: 2,
+    name: "우정돌솥비빔밥",
+    type: "한식",
+    distance: "30m",
+    rating: 4.5,
+    image: "🍲",
+    menus: [
+      { name: "특선 돌솥비빔밥", tags: [{ text: "모두 추천!", type: "good" }], reason: "나물이 많아 칼륨과 식이섬유가 풍부해요! 나트륨 배출을 촉진해주고, 혈당 상승을 완화해주며, 콜레스테롤 저하에 도움을 줘요!" },
+      { name: "불고기 돌솥비빔밥", tags: [{ text: "모두 추천!", type: "good" }], reason: "버섯, 취나물, 고사리는 혈압 조절에 도움이 되는 미네랄과 단백질이 풍부해요. 혈압 조절에 도움을 주고, 혈당 급상승을 억제하며 포만감을 높여줘요!" },
+      { name: "치즈날치알 돌솥비빔밥", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "치즈는 나트륨과 포화지방이 높아요! 자극적인 양념으로 혈압을 상승시킬 수 있고, 당분과 지방이 많아 혈당을 높이며, 고지혈증에는 지방과 나트륨이 모두 높이 혈관 손상 위험을 증가시켜요!" },
+      { name: "치즈매운닭 돌솥비빔밥", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "매운 양념과 치즈로 인해 나트륨과 포화지방이 높아요. 자극적인 양념이 혈압 상승을 유발할 수 있고, 염분과 열량이 높아 체중과 혈당 조절에 불리하며, 혈관 손상 위험을 높여요!" },
+      { name: "제육 돌솥비빔밥", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "양념육은 나트륨 당·포화지방 모두 높아요. 자극적인 양념으로 혈압 상승을 유발할 가능성이 있어요" }
+    ]
+  },
+  {
+    id: 3,
+    name: "해성막창",
+    type: "한식",
+    distance: "80m",
+    rating: 4.6,
+    image: "🥘",
+    menus: [
+      { name: "곱창전골", tags: [{ text: "고지혈증 비추천!", type: "bad" }], reason: "포화지방과 콜레스테롤 함량이 높아 고지혈증을 앓고 계신다면 추천하지 않아요!" },
+      { name: "한우소막창", tags: [{ text: "고지혈증 주의!", type: "caution" }], reason: "탄수화물과 나트륨은 비교적 적지만 지방과 콜레스테롤 함량은 높아 고지혈증을 앓고 계신다면 주의하세요! 채소와 함께 드시면 지방 흡수가 완화되는 효과가 있어요!" },
+      { name: "한우소대창", tags: [{ text: "모두주의!", type: "caution" }], reason: "기름이 많아 열량이 높아요!" }
+    ]
+  },
+  {
+    id: 4,
+    name: "유가네닭갈비",
+    type: "한식",
+    distance: "100m",
+    rating: 4.4,
+    image: "🐓",
+    menus: [
+      { name: "콘치즈 닭갈비", tags: [{ text: "당뇨, 고혈압 주의!", type: "caution" }, { text: "고지혈증 비추천!", type: "bad" }], reason: "고단백 고지방으로 신증과 체중 관리에 주의가 필요해요! 나트륨 함량도 높아 양념과 치즈섭취량 조절이 필수예요! 포화지방산이 과도하게 많으므로 양념과 치즈는 최소화하고 쌀 채소를 함께 섭취하는 것이 좋아요!" },
+      { name: "닭야채 철판볶음밥", tags: [{ text: "고혈압, 고지혈증 추천!", type: "good" }, { text: "당뇨 주의!", type: "caution" }], reason: "탄수화물 함량이 높지만 나트륨은 비교적 낮아요. 포화지방산과 단순당도 모두 낮아 건강에 부담이 적어요. 양념만 주의하면 좋은 음식이에요!" },
+      { name: "후루룩 떡볶이", tags: [{ text: "고지혈증 주의!", type: "caution" }, { text: "당뇨, 고혈압 비추천!", type: "bad" }], reason: "탄수화물과 당류가 모두 매우 높아 혈당 관리에 좋지 않아요. 특히 떡은 단순당 덩어리이므로 섭취를 피해야 해요. 나트륨 함량도 매우 높아 소스 섭취는 주의해야해요!" },
+      { name: "날치마요 주먹밥", tags: [{ text: "모두 주의!", type: "caution" }], reason: "탄수화물 함량이 높고 나트륨도 많아 섭취량 조절이 필요해요. 포화지방산이 기준을 초과하므로 주의해야 해요." }
+    ]
+  },
+  {
+    id: 5,
+    name: "참숯장작구이 낙화", 
+    type: "한식",
+    distance: "120m",
+    rating: 4.7,
+    image: "🔥",
+    menus: [
+      { name: "목살", tags: [{ text: "당뇨, 고지혈증 추천!", type: "good" }], reason: "돼지고기 목살은 삼겹살보다 포화지방이 적고 단백질이 풍부해요. 고단백 식품으로 혈당 상승을 완화해줘요! 기름기를 중이고 적당량만 섭취하면 더욱 좋아요!" },
+      { name: "닭꼬치", tags: [{ text: "고혈압 추천!", type: "good" }, { text: "당뇨 주의!", type: "caution" }], reason: "단백질 보충에 좋고 포만감을 높여줘요. 고단백 식품으로 혈당 상승을 완화하지만, 양념은 적게 사용해야 해요!" },
+      { name: "구운 새우", tags: [{ text: "모두 추천!", type: "good" }], reason: "새우는 저지방·고단백 식품이에요. 타우린이 혈압 조절에 도움을 줘요. 지방이 적고 흡수가 천천히 되어 혈당 관리에 좋아요. 또 불포화지방산이 나쁜 콜레스테롤을 낮춰 주는 효과가 있어요!" },
+      { name: "삼겹살", tags: [{ text: "고지혈증 비추천!", type: "bad" }], reason: "포화지방과 콜레스테롤이 많아요! 고지혈증 환자는 섭취를 자제해야 해요!" },
+      { name: "콘치즈", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "지방과 나트륨이 높아요. 탄수화물과 지방이 않아 혈당 급상승을 유발하고, 지방과 나트륨 과다로 혈중 지질의 상승을 일으켜요!" },
+      { name: "된장찌개", tags: [{ text: "고혈압 비추천!", type: "bad" }], reason: "염분이 높아 고혈압 환자에게는 추천하지 않아요!" }
+    ]
+  },
+  {
+    id: 6,
+    name: "버거스올마이티",
+    type: "양식",
+    distance: "150m",
+    rating: 4.3,
+    image: "🍔",
+    menus: [
+      { name: "갓치즈버거", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "열량, 나트륨, 포화지방 함량이 높아 세 질환자 모두에게 추천하지 않아요!" },
+      { name: "갓치킨버거", tags: [{ text: "당뇨주의!", type: "caution" }], reason: "단백질이 풍부한 닭가슴살 패티를 사용해 혈당을 천천히 올리고 포만감을 유지해 주지만 번과 소스의 탄수화물 나트륨 지방 함량이 높아 혈당과 혈압을 올릴 위험이 있어요!" },
+      { name: "올마이갓버거", tags: [{ text: "고지혈증, 당뇨 비추천!", type: "bad" }], reason: "패티와 치즈, 소스가 여러 겹으로 구성되어 포화지방 콜레스테롤 열량이 매우 높고, 번과 소스의 당질이 많아 혈당과 혈중 지질을 급격히 상승시킬 수 있어요!" }
+    ]
+  },
+  {
+    id: 7,
+    name: "피자드시우",
+    type: "양식",
+    distance: "180m",
+    rating: 4.4,
+    image: "🍕",
+    menus: [
+      { name: "닭껍질피자", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "기름지고 포화지방·나트륨 함량이 매우 높아 혈당, 혈중 지질, 혈압을 모두 악화시킬 수 있어요!" },
+      { name: "딥치즈 베이컨 피자", tags: [{ text: "고혈압 추천!", type: "good" }, { text: "당뇨 비추천!", type: "bad" }], reason: "단백질과 칼슘이 풍부해 혈압 조절에 도움이 될 수 있어 고혈압 환자에게는 일부 추천되지만, 도우와 치즈의 탄수화물·지방 함량이 높아 혈당 상승을 유발하므로 당뇨 환자에게는 비추천해요!" },
+      { name: "우시드 콤비네이션", tags: [{ text: "고혈압 추천!", type: "good" }, { text: "당뇨 비추천!", type: "bad" }], reason: "다양한 채소 토핑으로 칼륨과 식이섬유가 풍부해 나트륨 배출과 혈압 조절에 도움이 되어 고혈압 환자에게는 추천되지만, 도우와 소스의 탄수화물이 많아 혈당을 높일 수 있어 당뇨 환자에게는 비추천해요!" },
+      { name: "치즈버거 피자", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "치즈 고기 소스가 많아 포화지방·나트륨 탄수화물이 높고, 혈당 혈압·혈중 지질을 모두 상승시킬 수 있어서 추천하지 않아요!" }
+    ]
+  },
+  {
+    id: 8,
+    name: "플랜온",
+    type: "양식",
+    distance: "200m",
+    rating: 4.8,
+    image: "🍝",
+    menus: [
+      { name: "바질뇨끼", tags: [{ text: "모두 추천!", type: "good" }], reason: "바질 페스토의 올리브오일은 불포화지방으로 혈관 건강에 도움을 주고, 나쁜 콜레스테롤을 죽여줘요! 감자 기반으로 혈당지수가 쌀보다 낮아, 혈당 급상승을 완화해요!" },
+      { name: "스테이크뇨끼", tags: [{ text: "모두 추천!", type: "good" }], reason: "토마토소스는 칼륨 리코펜이 풍부해 나트륨 배출과 혈압 안정에 좋고, 항산화 작용으로 혈관을 보호해요! 또 붉은 고기는 혈당 급상승의 위험이 낮고, 단백질 일 섭취는 섭취는 식후 혈당 조절에 도움을 줘요." },
+      { name: "카치오 에 페페", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "치즈와 크림으로 지방·나트륨이 많아 혈당 조절이 어려워요! 탄수화물 함량이 놓고 단백질 섬유질 비율 낮아요." },
+      { name: "60cm 파스타", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "탄수화물 함량이 높고 단백질 섬유질 비율은 낮아요." },
+      { name: "트러플뇨끼", tags: [{ text: "당뇨, 고지혈증 비추천!", type: "bad" }], reason: "크림, 치즈가 많아 열량 지방이 높고, 혈당 조절이 어려워요. 탄수화물 함량도 높고 단백질 섬유질 비율이 낮아요." },
+      { name: "최고급 흑우 채끝 스테이크", tags: [{ text: "당뇨 주의!", type: "caution" }, { text: "고지혈증 비추천!", type: "bad" }], reason: "붉은 고기가 혈당 조절에 도움을 주지만 소스 등의 당과 지방이 높아 주의가 필요해요! | 채끝은 포화지방 콜레스테롤 함량이 높은 부위이고, 포트와인소스, 버터, 올리브오일 등과 함께 조리되어 혈중 나쁜 콜레스테롤 상승 위험이 있어요." }
+    ]
+  },
+  {
+    id: 9,
+    name: "딤타오",
+    type: "중식",
+    distance: "250m",
+    rating: 4.6,
+    image: "🥟",
+    menus: [
+      { name: "소룡포", tags: [{ text: "고혈압, 고지혈증 주의!", type: "caution" }], reason: "간장과 육즙의 나트륨 함량이 높아요!돼지고기의 지방이 많이 함유되어 있어요.되도록 적게 먹는 것이 좋아요!" },
+      { name: "하가우", tags: [{ text: "모두 추천!", type: "good" }], reason: "새우가 들어있어 담백질이 많고 나트륨이 적어 담백해요! 지방도 낮아 모두에게 추천해요!" },
+      { name: "부추새우교자", tags: [{ text: "모두 추천!", type: "good" }], reason: "해산물과 채소의 조화로 포화지방이 적고 칼륨이 풍부해요! 균형 있는 음식으로 모두에게 추천해요!" },
+      { name: "슈마이", tags: [{ text: "모두 주의!", type: "caution" }], reason: "전분과 고기의 지방이 많아 혈당이 약간 상승할 수 있어요! 간이 세 나트륨이 많고 지방도 다량 함유되어 세 질환 모두 주의해서 드세요!" },
+      { name: "차슈바오", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "밀가루로 된 빵피와 소스로 인해 나트륨, 포화지방, 당이 모두 높아요. 세 가지 질환 모두에게 추천하지 않아요!" },
+      { name: "토마토 달걀볶음", tags: [{ text: "당뇨, 고지혈증 추천!", type: "good" }], reason: "단백질과 채소의 조합이 조화롭고 혈당에 미치는 영향이 적어요! 항산화 성분이 풍부해요!" },
+      { name: "대파새우계란볶음밥", tags: [{ text: "고혈압 비추천!", type: "bad" }], reason: "양념으로 인해 염분이 높아 고혈압을 앓고 계신다면 추천하지 않아요!" },
+      { name: "차슈볶음밥", tags: [{ text: "비추천!", type: "bad" }], reason: "당분, 밀가루, 지방, 염분의 함량이 높아 세 개 질환 모두에게 추천하지 않아요!" },
+      { name: "연잎밥", tags: [{ text: "모두 추천!", type: "good" }], reason: "잡곡과 찹쌀로 구성되어 혈당 상승이 완만한 편이에요! 나트륨과 기름도 적고 영양 균형이 좋은 음식이라 모두에게 추천해요!" },
+      { name: "춘권", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "포화지방이 많은 고열량 음식이에요! 염분과 트랜스지방도 많이 함유되어 모두에게 추천하지 않아요!" },
+      { name: "매실 토마토", tags: [{ text: "고혈압 추천!", type: "good" }, { text: "당뇨 비추천!", type: "bad" }], reason: "당분 함량이 높아 당뇨환자에겐 추천하지 않아요! 나트륨은 거의 없어 고혈압 환자에겐 추천해요!" },
+      { name: "청경채볶음", tags: [{ text: "모두 추천!", type: "good" }], reason: "섬유질이 많아 혈당 조절에 도움돼요! 칼륨이 풍부해 혈압 조절에 도움돼요! 섬유질도 풍부해 모두에게 추천해요!" },
+      { name: "가지튀김", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "화지방과 트랜스지방이 많이 들어있고 염분 함량도 높아 열량이 높아요! 세 질환 모두에게 추천하지 않아요!" },
+      { name: "마늘새우가리비찜", tags: [{ text: "당뇨 추천!", type: "good" }, { text: "고혈압 비추천!", type: "bad" }], reason: "저탄수화물 고단백 음식이고 지방은 적게 들어있어 당뇨환자에게 추천해요! 나트륨 함량은 높아 고혈압 환자에겐 추천하지 않아요!" },
+      { name: "마늘새우찜", tags: [{ text: "모두 추천!", type: "good" }], reason: "탄수화물과 지방은 적고 단백질은 풍부해요. 세 질환 모두에게 추천해요!" },
+      { name: "마늘가리비찜", tags: [{ text: "모두 추천!", type: "good" }], reason: "저지방 저탄수화물이며 해산물로 인해 단백질이 풍부해 세 질환 모두에게 추천해요!" },
+      { name: "완탕면", tags: [{ text: "당뇨, 고혈압 비추천!", type: "bad" }], reason: "면과 짠 국물의 조합은 혈당 급상승의 위험이 있어요! 지방과 나트륨이 과다하게 들어있어 고혈압 환자에게도 추천하지 않아요!" },
+      { name: "매운완탕면", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "혈당 급상승의 위험이 있어요! 지방과 나트륨도 많이 들어 있어 모두에게 추천하지 않아요!" },
+      { name: "우육탕면", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "혈당 급상승의 위험이 있어요! 지방과 나트륨도 많이 들어있어 모두에게 추천하지 않아요!" }
+    ]
+  },
+  {
+    id: 10,
+    name: "라라관",
+    type: "중식",
+    distance: "280m",
+    rating: 4.5,
+    image: "🥘",
+    menus: [
+      { name: "소고기 마라훠궈전골", tags: [{ text: "당뇨, 고혈압 비추천!", type: "bad" }], reason: "마라는 혈당을 올리고 나트륨 함량이 높아 당뇨와 고혈압에 좋지 않아요." },
+      { name: "군만두 & 마라간장", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "튀긴 만두는 지방과 칼로리, 나트륨 함량이 높아 세 질환과 심혈관 질환에도 좋지 않아요." },
+      { name: "하얼빈식 황도 꿔바로우", tags: [{ text: "고혈압, 고지혈증 비추천!", type: "bad" }], reason: "튀긴 음식은 혈관을 막히게 해서 혈액 순환을 방해해요!" }
+    ]
+  },
+  {
+    id: 11,
+    name: "희마쯔",
+    type: "일식",
+    distance: "300m",
+    rating: 4.7,
+    image: "🍲",
+    menus: [
+      { name: "소고기 샤브샤브", tags: [{ text: "당뇨, 고혈압 추천!", type: "good" }, { text: "고지혈증 주의!", type: "caution" }], reason: "저탄수화물의 음식으로 혈당에 안정적이고 채소의 칼륨이 나트륨 배출을 도와줘요! 고지혈증 환자는 붉은 고기의 섭취량을 조절할 필요가 있어요!" },
+      { name: "스키야키", tags: [{ text: "모두 주의!", type: "caution" }], reason: "소스의 당분이 많아 당뇨 환자는 주의가 필요해요! 나트륨과 지방의 함량이 높아 고혈압과 고지혈증 환자도 주의하세요!" }
+    ]
+  },
+  {
+    id: 12,
+    name: "해룸",
+    type: "일식",
+    distance: "320m",
+    rating: 4.8,
+    image: "🍣",
+    menus: [
+      { name: "모듬 숙성 사시미", tags: [{ text: "고지혈증 추천!", type: "good" }, { text: "당뇨, 고혈압 주의!", type: "caution" }], reason: "단백질 함량이 너무 높아 당뇨 환자는 섭취량을 조절해야 해요! 나트륨 함량이 높아요. 소스는 적게 드세요! 단순당과 지방 함량이 낮고 오메가-3가 풍부해요!" },
+      { name: "사케동", tags: [{ text: "고지혈증, 고혈압 추천!", type: "good" }, { text: "당뇨 주의!", type: "caution" }], reason: "밥이 혈당에 직접 영향을 미쳐요. 나트륨 함량이 낮지만, 고염분 소스를 섭취하면 혈압을 상승시켜요! 단순당과 포화지방이 낮고 오메가-3가 풍부해요!" },
+      { name: "카이센동", tags: [{ text: "고지혈증, 고혈압 추천!", type: "good" }, { text: "당뇨 주의!", type: "caution" }], reason: "탄수화물 함량이 비교적 높아 혈당이 급격히 오를 수 있어요. 나트륨 함량이 낮아 하루 제한 목표에 적합해요. 단순당, 포화지방산, 콜레스테롤이 모두 낮아 기준에 잘 부합해요." },
+      { name: "육회덮밥", tags: [{ text: "고혈압, 고지혈증 추천!", type: "good" }, { text: "당뇨 주의!", type: "caution" }], reason: "밥의 종류에 따라 혈당 반응이 달라지므로 식이섬유 섭취를 보충해야 해요. 나트륨 함량이 매우 낮아 하루 제한 목표에 적합해요! 총 지방과 당류가 매우 낮아 중성지방 관리에 유리해요!" },
+      { name: "스지오뎅탕", tags: [{ text: "고지혈증 추천!", type: "good" }, { text: "당뇨, 고혈압 주의!", type: "caution" }], reason: "단백질 함량과 당류가 모두 제한 기준 초과에요. 나트륨 함량이 매우 높아요! 국물 섭취를 최소화 하세요! 포화지방산과 콜레스테롤은 낮아 제한 기준에 잘 부합해요!" },
+      { name: "연어후토마끼", tags: [{ text: "고지혈증 추천!", type: "good" }, { text: "당뇨, 고혈압 주의!", type: "caution" }], reason: "탄수화물 함량이 높고 밥이 주재료이므로 혈당 관리를 위해 탄수화물 총량을 조절해야 해요. 나트륨 함량이 높아 하루 제한 목표를 지키기 어려울 수 있어요. 포화지방산, 트랜스지방산, 콜레스테롤이 모두 낮아 제한 기준에 잘 부합해요!" }
+    ]
+  },
+  {
+    id: 13,
+    name: "도라보울",
+    type: "기타",
+    distance: "350m",
+    rating: 4.6,
+    image: "🍛",
+    menus: [
+      { name: "모듬버섯과 하루야채 17종 수프카레", tags: [{ text: "당뇨, 고혈압 추천!", type: "good" }], reason: "버섯은 콜레스테롤을 낮춰주고 혈압 조절에 도움을 주며, 혈당지수도 낮아요!" },
+      { name: "치킨과 하루야채 17종 수프카레", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "트랜스 지방이 많은 치킨이 들어가 있어요. 세 질환 모두에게 추천하지 않아요!" },
+      { name: "돼지고기와 하루야채 17종 수프카레", tags: [{ text: "당뇨, 고혈압 추천!", type: "good" }, { text: "고지혈증 주의!", type: "caution" }], reason: "심혈관 질환에 좋은 브로콜리와 낮은 칼로리와 섬유질이 많은 당근은 혈관 질환과 당뇨에 좋아요. 돼지고기에 있는 비계부분은 포화지방과 콜레스테롤이 많으니 주의하세요!" }
+    ]
+  },
+  {
+    id: 14,
+    name: "리풀",
+    type: "기타",
+    distance: "420m",
+    rating: 4.7,
+    image: "🥗",
+    menus: [
+      { name: "리풀 당백 스테이크", tags: [{ text: "당뇨 추천!", type: "good" }], reason: "안심은 지방이 적고 샐러드의 채소는 식이섬유가 많아 혈당 조절에 도움이 돼요!" },
+      { name: "리풀 포케볼 : 숙성연어", tags: [{ text: "모두 추천!", type: "good" }], reason: "연어는 혈관질환에 좋고 혈당을 천천히 상승시켜요!" },
+      { name: "모듬리풀의 속편한 들기름면", tags: [{ text: "당뇨 추천!", type: "good" }], reason: "들기름에는 불포화 지방산이 많아 고지혈증에 좋아요. 메밀은 고혈압과 당뇨 환자에게 좋은 음식이에요!" }
+    ]
+  },
+  {
+    id: 15,
+    name: "탁사발 두부공방",
+    type: "한식",
+    distance: "380m",
+    rating: 4.5,
+    image: "🥘",
+    menus: [
+      { name: "들기름 두부구이", tags: [{ text: "모두 추천!", type: "good" }], reason: "들기름은 오메가-3 지방산이 풍부해요! 두부와 함께 섭취시 식물성 단백질과 건강한 지방을 동시에 섭취할 수 있어서 세 질환 모두에게 추천해요!" },
+      { name: "모두부 김치 철판 볶음", tags: [{ text: "당뇨 추천!", type: "good" }, { text: "고혈압 비추천!", type: "bad" }], reason: "두부는 식물성 단백질이 풍부하고, 포화지방이 낮아요. 하지만 김치와 볶음 조리로 나트륨이 높아서 고혈압 환자에게 추천하지 않아요!" },
+      { name: "동해바다 맑은 순두부", tags: [{ text: "모두 추천!", type: "good" }], reason: "순두부는 저칼로리, 고단백 식품으로 포화지방이 거의 없어서 세 질환 모두에게 추천해요!" },
+      { name: "콩국수", tags: [{ text: "고지혈증, 고혈압 추천!", type: "good" }, { text: "당뇨 비추천!", type: "bad" }], reason: "콩은 혈압 조절과 콜레스테롤 개선에 도움이 돼요. 하지만 면 위주라 혈당 급상승의 위험이 있어요!" },
+      { name: "얼큰 순두부", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "새우와 멸치육수의 매운 국물 나트륨 함량이 높아 특히 고혈압 환자에게 추천하지 않아요!" },
+      { name: "막걸리", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "알코올은 혈압상승, 혈당 조절 방해, 중성지방 증가를 유발하기 때문에 세 질환 모두에게 추천하지 않아요!" }
+    ]
+  },
+  {
+    id: 16,
+    name: "남도 분식",
+    type: "기타",
+    distance: "450m",
+    rating: 4.2,
+    image: "🌭",
+    menus: [
+      { name: "남도 옛날 떡볶이", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "떡볶이는 고당지수 식품이며 밀떡은 특히 칼로리와 당질이 높아요. 소시지, 어묵 등 가공식품과 높은 나트륨 함량으로 세 질환 모두에게 추천하지 않아요!" },
+      { name: "짜장 떡볶이", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "짜장 소스는 당류가 특히 높아요. 나트륨 함량이 높고 고당지수 식품인 떡볶이는 세 질환 모두에게 추천하지 않아요!" },
+      { name: "김밥쌈", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "제육볶음은 가공된 돼지고기로 포화지방과 나트륨이 높고 김밥의 재료의 양념으로 혈당 증가 위험이 높아요!" },
+      { name: "납작만두", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "튀김은 트렌스지방과 포화지방이 높아 콜레스테롤 수치를 낮추고, 튀김옷의 탄수와 소스는 당분으로 혈당 증가되기 때문에 세 질환 모두에게 추천하지 않아요!" },
+      { name: "모듬튀김", tags: [{ text: "모두 비추천!", type: "bad" }], reason: "정제탄수인 만두피와 야채무침의 달달한 양념으로 혈당이 상승하고, 튀긴 만두피로 인한 트렌스지방이 많아 세 질환 모두에게 추천하지 않아요!" }
+    ]
+  },
+  {
+    id: 17,
+    name: "샐러드 바스켓",
+    type: "기타",
+    distance: "400m",
+    rating: 4.6,
+    image: "🥗",
+    menus: [
+      { name: "감바스 샐러드 파스타", tags: [{ text: "고혈압 추천!", type: "good" }, { text: "당뇨 비추천!", type: "bad" }], reason: "탄수화물이 높아 혈당 급상승 우려가 있지만 나트륨과 지방은 낮아요!" },
+      { name: "수비드 부채살 스테이크", tags: [{ text: "당뇨 추천!", type: "good" }], reason: "포화지방이 많지만 단백질이 높고 당이 낮아요!" },
+      { name: "계절과일 리코타 치즈 샐러드", tags: [{ text: "고지혈증, 고혈압 추천!", type: "good" }], reason: "과일의 천연당은 적당하나, 리코타 치즈는 포화지방을 소량 포함하고 있어요!" },
+      { name: "연어 스테이크 샐러드", tags: [{ text: "모두 추천!", type: "good" }], reason: "연어의 오메가-3 지방산이 혈중 지질을 개선할 수 있고 나트륨이 낮아요!" },
+      { name: "아보카도 김치볶음밥", tags: [{ text: "당뇨 비추천!", type: "bad" }], reason: "탄수화물·나트륨 함량이 높아 혈당 상승과 염분 과다 섭취를 유발할 수 있어요!" }
+    ]
+  },
+  {
+    id: 18,
+    name: "포솔 쌀국수",
+    type: "기타",
+    distance: "480m",
+    rating: 4.4,
+    image: "🍜",
+    menus: [
+      { name: "한우 사골 쌀국수", tags: [{ text: "당뇨, 고지혈증 주의!", type: "caution" }, { text: "고혈압 비추천!", type: "bad" }], reason: "탄수화물과 나트륨 함량이 높아요! 포화지방산도 높아 콜레스테롤 관리에 불리해요. 고혈압 환자는 국물의 나트륨이 매우 높아 국물 섭취는절대 금지해야 해요!" },
+      { name: "호치민식 비빔 쌀국수", tags: [{ text: "고지혈증 추천!", type: "good" }, { text: "당뇨, 고혈압 주의!", type: "caution" }], reason: "탄수화물 함량이 매우 높고 당류도 높아 양 조절이 필요해요! 나트륨이 높아 양념 조절이 필수예요! 단순당, 지방, 포화지방이 모두 기준을 충족하여 고지혈증 환자에게 추천해요!" },
+      { name: "포크 후라이드", tags: [{ text: "당뇨, 고혈압 주의!", type: "caution" }, { text: "고지혈증 비추천!", type: "bad" }], reason: "고지방·고단백 식품으로 체중 증가 및 신장 질환 위험이 있어요! 나트륨 함량이 높아 섭취량을 줄이고 소스를 조절하는 것이 좋아요! 포화지방산이 많아 고지혈증 환자에게는 추천하지 않아요!" }
+    ]
+  }
+];
+
+const KNOWLEDGE_DATA = {
+  diet: {
+    diabetes: `1. 일정한 시간에 알맞은 양의 음식을 규칙적으로 먹는 것이 정말 중요해요!
+적절한 열량 섭취와 규칙적인 식사는 혈당 조절에 큰 도움이 돼요.
+칼로리를 너무 많이 먹으면 체중이 쉽게 늘고, 그러면 혈당 조절이 어려워질 뿐 아니라 혈압 상승과 심혈관질환 위험까지 커질 수 있어요.
+
+1) 하루 3번 규칙적으로 식사하기
+제때 식사하지 않으면 다음 끼니에 과식이나 폭식을 하게 되어 체중 증가로 이어질 수 있어요!
+특히 당뇨약을 복용 중이거나 인슐린을 맞는 사람들은 식사를 거르면 저혈당 위험이 더 높아질 수 있어요.
+
+2) 탄수화물 섭취 조절하기
+우리나라는 밥을 주식으로 먹다 보니 탄수화물이 전체 에너지 섭취량의 65~70%까지 차지하는 경우가 많아요.
+당뇨병이 있는 사람이라면 탄수화물을 전체 에너지의 약 55~65% 정도로 조절해주면 혈당 개선에 훨씬 도움이 돼요!
+
+2. 설탕이나 꿀 같은 단순당 섭취는 꼭 주의해야 해요!
+설탕, 포도당, 과당처럼 단맛을 내는 재료들을 감미료라고 불러요.
+이런 단순당은 열량이 농축돼 있고 흡수가 빨라서 혈당을 아주 빠르게 올릴 수 있어요.
+물론 당은 우리 몸의 에너지 공급원으로 중요한 역할을 하지만, 너무 많이 먹으면 비만과 혈당 상승의 원인이 되기 때문에 조절이 필요해요!
+체중감량이나 혈당 조절이 필요할 때는 설탕 섭취를 줄이는 것이 필수예요.
+이때 단맛은 느끼면서 칼로리 부담을 줄이는 방법으로 대체감미료를 활용해볼 수 있어요!
+식약처에서 승인한 감미료는 총 22종이며, 1일 섭취허용량 범위 내에서 사용하면 안전해요.
+하지만 궁극적으로는 단맛에 익숙해진 식습관 자체를 조금씩 줄여서, 당류 섭취가 늘어나지 않도록 개선하는 노력도 정말 중요해요!
+
+3. 식이섬유는 꼭 충분히 섭취해야 해요!
+식이섬유는 우리가 먹은 음식이 장에서 흡수되는 속도를 늦춰줘서 혈당이 갑자기 치솟는 것을 막아주고, 콜레스테롤 농도를 낮추는 데도 도움을 줘요!
+그래서 혈당 조절뿐 아니라 심뇌혈관질환 예방에도 아주 중요한 역할을 해요.
+또한 장 운동을 활발하게 만들어 변비를 예방하고, 포만감을 오래 유지해줘서 식사 조절을 꾸준히 실천하는 데도 큰 도움이 돼요!
+
+식이섬유를 충분히 섭취하는 방법은 이렇게 실천할 수 있어요!
+① 채소는 즙보다 생채소로, 과일도 주스보다 생과일로 먹고 가능하면 껍질째 섭취해요!
+② 흰 쌀밥보다는 잡곡류·덜 도정된 곡류·콩류를 선택해요!
+③ 채소와 해조류(미역, 다시마 등)의 섭취량을 늘려요!
+
+4. 지방은 적절히 섭취하되, 콜레스테롤 섭취는 꼭 제한해야 해요!
+동물성 단백질에 들어 있는 포화지방산과 콜레스테롤을 많이 먹으면 심뇌혈관질환 위험이 높아져요. 
+그래서 포화지방산 섭취는 줄이고, 식물성 기름에 많은 불포화지방산을 적당히 섭취하는 것이 좋아요!
+
+지방을 건강하게 섭취하는 방법은 이렇게 실천할 수 있어요!
+① 요리할 때는 불포화지방산이 많은 기름을 사용해요!
+포화지방산이 많은 식품: 소기름, 돼지기름, 베이컨, 쇼트닝, 버터, 야자유, 코코넛유 등
+불포화지방산이 많은 식품: 콩기름, 참기름, 들기름, 올리브유, 해바라기씨유, 참깨, 콩류, 견과류 등
+② 고기를 조리할 때는 지방을 최대한 제거하고, 튀기기보다는 기름기를 줄일 수 있는 그릴 조리법을 활용해요!
+③ 닭고기 같은 가금류는 조리 전·후로 껍질을 최대한 제거해서 먹어요!
+④ 트랜스지방산은 식물성 기름에 수소를 넣어 고체로 만드는 과정에서 생기는 지방이라 마가린, 쇼트닝, 과자류, 파이류에 많이 들어 있어요. 하루 총 열량의 1% 미만(약 2g)로 섭취하는 것이 안전해요!
+
+5. 염분 섭취는 꼭 줄여야 해요!
+짠 음식을 자주 먹으면 염분 섭취가 늘어나서 혈압이 쉽게 올라갈 수 있어요. 그래서 혈압이 높지 않아도 싱겁게 먹는 습관을 들이는 게 좋아요!
+특히 당뇨병 환자는 고혈압이 함께 나타나는 경우가 많고, 현재 혈압이 정상이어도 나이가 들면 자연스럽게 혈압이 올라갈 수 있어요.
+자연식품(신선 식품)에는 염분이 거의 없지만, 가공식품에는 염분이 많기 때문에 주의가 필요해요!
+간장, 조미소금, 장아찌, 젓갈, 소금구이, 라면스프, 마른안주, 치즈 등은 가능한 한 적게 먹는 것이 좋아요.
+과일·야채는 염분이 적어서 좋은 식품이지만, 당도가 높은 과일은 혈당을 올릴 수 있으니 적당량만 섭취하는 게 좋아요!
+
+6. 술은 마시지 않는 게 가장 좋아요!
+술은 영양소는 거의 없지만 열량만 높아서 혈당·체중 조절에 도움이 되지 않아요. 가능한 한 금주가 가장 좋아요!
+꼭 마셔야 하는 상황이라면 1~2주에 2회 이상은 마시지 말고, 한 번 마실 때 남성은 2잔, 여성은 1잔 이하로 제한하는 게 안전해요.
+
+당뇨병 환자가 꼭 지켜야 할 음주 원칙은 이렇습니다!
+① 공복 상태나 운동 직후에는 절대 술을 마시면 안 돼요.
+② 술과 함께 식사를 늦게 하거나 과식하면 혈당이 많이 오를 수 있어요! 반대로 술만 마시고 식사를 거르면 다음날 아침 저혈당이 올 수 있으니 아침 식사와 혈당 체크는 반드시 해야 해요.
+③ 당분이 많은 술은 혈당을 크게 올리니 특히 주의해야 해요! 예: 과실주, 막걸리·곡주, 칵테일, 발효주 등
+④ 일부 당뇨약은 술과 상호작용할 수 있으니 조심해야 해요.`,
+    hyperlipidemia: `1. 탄수화물 섭취 줄이기
+밥 중심 식사에서는 탄수화물이 과다 섭취되기 쉬우므로 식사량을 조절하고 흰 쌀밥 대신 현미, 통밀 등 통곡물을 선택하는 것이 좋아요!
+식사 외 간식·후식으로 감자, 고구마, 빵처럼 탄수화물 많은 음식은 추가로 먹지 않도록 주의해요.
+
+2. 지방은 ‘양’보다 ‘질’을 선택하기
+반찬은 기름 많은 고기 대신 불포화지방산이 많은 생선 위주로 먹고, 식이섬유가 풍부한 채소·콩류를 충분히 섭취해야 해요!
+간식은 생과일과 우유가 좋고, 단 음료·디저트는 피하는 것이 좋아요.
+이상지질혈증을 예방하려면 단순히 지방 섭취량을 줄이는 것보다, 포화지방산(삼겹살, 베이컨, 소시지, 팜유)이나 트랜스지방산(과자류, 튀김류)을 피하고, 불포화지방산(생선·식물성 기름)을 선택하는 것이 훨씬 중요해요!`,
+    hypertension: `1. 싱겁게 먹기
+한국인은 하루 평균 소금 12g(나트륨 약 4,546mg) 정도를 먹는 것으로 추정돼요.
+이 수치는 서양인(10g), 일본인(10.7g)보다 더 많은 편이에요.
+연구에 따르면 소금을 하루 10.5g에서 절반으로 줄이면, 수축기혈압이 평균 4~6mmHg나 떨어지고, 심혈관질환 위험도 줄어든다고 해요!
+우리나라에서 소금과 고혈압 및 심혈관질환 발생에 대한 전향적 연구는 없지만, 적어도 우리나라처럼 소금 섭취가 많은 사람이 소금 섭취를 줄였을 때 해가 된다는 증거도 없어요!
+또 소금의 권장량은 하루 6g 이하(약 1 티스푼)예요. 고령자·비만·당뇨병·고혈압 가족력이 있는 경우는 소금에 더 민감해서 적극적인 저염식을 하면 혈압이 더 잘 낮아져요!
+
+2. 채식 위주의 식사는 고혈압 환자의 혈압을 낮추는 데 도움이 돼요!
+이 효과는 단순히 단백질 섭취를 안 해서가 아니라, 과일·채소·식이섬유 섭취가 증가하고 포화지방산 섭취가 줄어들기 때문이에요.
+탄수화물·단백질·지방·식이섬유·비타민·미네랄이 균형 있게 들어 있는 식사가 중요하고, 충분한 야채와 적당한 과일은 매일 꾸준히 챙겨야 해요!
+특히 설탕·단순당·포화지방·전체 지방 섭취는 줄이는 게 좋고, 지중해식 식단(야채·해산물 중심)은 혈압과 심혈관 건강에 좋다고 알려져서 추천돼요.
+주 2회 이상 생선을 먹고, 커피는 적정량이면 크게 제한할 필요 없어요!
+
+3. 금연
+흡연 중에는 니코틴 때문에 혈압과 맥박이 일시적으로 상승해요.
+흡연은 고혈압 못지않게 강력한 심혈관 위험요인이기 때문에 혈압을 아무리 잘 조절해도 흡연을 계속하면 위험을 피할 수 없어요.
+간접흡연도 위험하다는 점, 꼭 기억해야 해요!
+금연 보조제에 들어 있는 소량의 니코틴은 혈압을 의미 있게 올리지 않기 때문에 금연 행동요법과 함께 사용해도 괜찮아요.
+금연 후 체중 증가가 나타날 수 있으므로 운동·식사조절을 함께 하는 게 중요해요.
+흡연은 뇌경색·심근경색·말초동맥질환의 원인이 되고, 흡연과 고혈압이 함께 있으면 질환 발생 속도도 더 빠르고 더 위험해져요!
+
+4. 절주
+과도한 음주는 혈압을 상승시키고, 고혈압 약의 효과도 떨어뜨릴 수 있어요.
+특히 체중이 낮은 사람은 알코올 감수성이 더 높아서 허용량이 절반이에요.
+과음은 뇌졸중 위험을 크게 높이기 때문에 꼭 주의해야 해요!
+
+고혈압 환자의 안전한 음주 기준
+ → 하루 기준 : 남성 - 2잔 이하, 여성 - 1잔 이하
+ → 1회 알코올 음주량 기준(알코올 g) : 남성 - 20~30g (2~3잔), 여성 - 10~20g (1~2잔)
+ → 1주일 총 알코올 음주량 기준 : 남성 - 140g 미만, 여성 - 80g 미만
+ → 술의 종류별 1일 허용량(에탄올 약 30g 기준) : 맥주 - 720mL(1병), 와인 - 200~300mL(1잔), 위스키 - 60mL(2잔), 소주 - 2~3잔(약 1/3병) 이하`
+  },
+  exercise: {
+    diabetes: {
+      sections: [
+        {
+          title: "1. 운동 방법",
+          content: `특별한 금기가 없으면 30분 이상 지속 가능한 유산소 운동을 권장해요. (걷기, 조깅, 수영, 자전거 등)
+운동 강도는 중간정도로 추천해요!(최대심박수의 60~75%)
+        → ‘보통~약간 힘듦’ 정도
+연령별 목표 심박수
+        → 20대 130회/분, 30대 125회/분, 40대 120회/분, 50대 115회/분, 60대 110회/분
+식후 1–2시간, 혈당이 상승한 시점에 운동을 권장해요!
+규칙적 운동 시 인슐린 복용량을 약간 줄일 수 있어요!(의사와 상의)
+운동이 길어질 경우 사탕·주스와 같은 당분 섭취로 저혈당을 예방하도록 해요!
+효과 유지를 위해서는 주 3회 이상, 체력 향상을 위해서는 주 4~5회 실시를 권장해요!`
+        },
+        {
+          title: "2. 운동 시 주의사항",
+          content: `초기에는 운동 전·운동 후 15분·운동이 끝나고 4~5시간 후 혈당을 측정해요!
+저혈당 증상(몽롱함, 시야 흐림, 떨림) 시 당분을 섭취해요!
+운동 후 발 관찰이 필요해요: 물집·상처·감염 여부 확인
+반드시 양말·신발을 착용하고, 맨발로 잔디·모래밭을 걷지 않아요!
+너무 덥거나 추운 날씨에는 운동을 피하는 게 좋아요!
+혈당조절 불량, 망막이상, 고혈압, 심장질환 등 있는 경우
+        → 무리한 근력운동·기구운동을 금지해요!
+늦은밤에 고강도 운동을 금지해요!
+        → 운동 후 4~6시간 뒤 저혈당 발생의 위험이 있어요, 또 수면 중 저혈당의 위험이 있어요!`
+        }
+      ],
+      videos: ['kKHxhFA_rr8']
+    },
+    hyperlipidemia: {
+      sections: [
+        {
+          title: "1. 운동 방법",
+          content: `적합한 운동: 걷기, 등산, 조깅, 자전거, 수영 등 유산소 운동
+1회 30분 이상, 약 200~300kcal 소모 수준을 권장해요!
+지속 시 효과
+        중성지방 ↓ : 약 4개월
+        콜레스테롤 ↓ : 약 1년
+운동과 함께 반드시 저지방 식이요법을 병행하는 게 좋아요!
+흡연, 커피 등 기호식품은 가능하면 제한하는 게 좋아요!`
+        },
+        {
+          title: "2. 운동 시 주의사항",
+          content: `순서: 준비운동 → 유산소 운동 → 정리운동
+운동 전 혈압 측정 필수!
+180/110mmHg 이상 → 운동을 금지하고, 약물조절이 우선이에요!
+오전 7~10시 운동은 피해주세요!(혈압 상승 시간대)
+겨울철 실내→실외 이동 시 기온차를 주의해요. 실내에서 준비운동 후 외출하도록 해요!
+운동 후 목욕·사우나는 체온이 정상적 회복된 후에 이용하세요!
+고혈압 약물의 영향 확인이 필요해요!
+베타차단제: 심박·혈압 감소 → 저산소증 위험
+칼슘길항제: 심박수 증가 가능
+                → 자신이 복용 중인 약의 운동 영향을 반드시 확인해요!`
+        }
+      ],
+      videos: ['25pr6KA2Ts0', 'kkqqVSESoTI']
+    },
+    hypertension: {
+      sections: [
+        {
+          title: "1. 운동 효과 및 필요성",
+          content: `규칙적 유산소 운동 3개월은                      → 혈압 5~10mmHg 감소시켜요!
+운동 시 교감신경 활성 감소, 
+        말초혈관 저항 감소가 주요 기전이에요.
+운동 전 운동부하검사로 혈압 반응 
+        평가가 필요해요!
+가장 안전한 기본 운동: 걷기`
+        },
+        {
+          title: "2. 권장 운동 종류",
+          content: `① 유산소 운동
+주 3~5회, 1회 30분 이상
+② 고정식 자전거
+시작 강도 50~100W, 회전수 40~60rpm
+③ 수영
+처음엔 물속 걷기·킥보드 사용을 추천해요!
+ ④ 준비·정리 운동
+혈압 급상승 예방을 위해 반드시 시행해야 해요!
+스트레칭 시 호흡은 자연스럽게, 
+        머리를 아래로 내리는 동작은 피해주세요!`
+        },
+        {
+          title: "3. 운동 시 주의사항",
+          content: `순서: 준비운동 → 유산소 운동 → 정리운동
+운동 전 혈압 측정 필수
+180/110mmHg 이상 → 운동 금지, 약물조절 우선
+오전 7~10시 운동은 피함(혈압 상승 시간대)
+겨울철 실내→실외 이동 시 기온차 주의, 실내에서 준비운동 후 외출
+운동 후 목욕·사우나는 체온이 정상적 회복 후에 이용
+고혈압 약물 영향 확인 필요
+베타차단제: 심박·혈압 감소 → 저산소증 위험
+칼슘길항제: 심박수 증가 가능
+                → 자신이 복용 중인 약의 운동 영향 반드시 확인!`
+        }
+      ],
+      videos: ['ZeNTrMEgKps', 'Wj83WHgOWu8']
+    }
+  },
+  faq: {
+    diabetes: [
+      { q: "언제 혈당을 측정하는 것이 좋은가요?\n자가혈당측정은 얼마나 자주가 좋은가요?", a: "- 자가혈당측정은 당뇨 대사조절 상태를 확인하는 가장 기본적인 방법이에요! \n보통 아침·점심·저녁 식전 + 취침 전 측정해요! \n아침 식전 + 아침 식후 2시간째 측정으로 대체가 가능하기도 해요! \n임신 중이거나 아플 때는 매 식전·식후 모두 측정이 필요해요! \n저혈당/고혈당 증상 시 즉시 혈당을 측정해야 해요! \n식후혈당은 식사 시작 후 2시간에 측정을 권장해요! \n혈당측정기 사용법은 제품별로 달라 설명서를 잘 확인해야 해요! \n가정에서 자주 측정해 혈당 변화를 스스로 파악하는 것이 중요해요! \n매일이 어렵다면 주 2~3일, 하루 4회 측정해 기록하면 관리에 도움돼요! \n측정 기록은 담당 의료진에게 보여주고, 병원의 당화혈색소와 비교하면 좋아요! " },
+      { q: "인슐린은 평생 맞아야 하나요?", a: "- 주치의가 인슐린을 권유하는 데에는 충분한 이유가 있어요.\n        → 대부분 경구혈당강하제로 혈당조절이 더 이상 안 되기 때문이에요!\n경구혈당강하제는 췌장에서 인슐린을 더 짜내거나 인슐린 작용을 돕는 약이에요.\n당뇨가 오래되면 췌장 인슐린 분비가 고갈되어 약 효과가 떨어질 수 있어요!\n        → 이때 여러 종류의 경구약을 늘려도 의미가 없어요!\n        → 인슐린 주사가 혈당조절에 반드시 필요해지는 단계에요!\n혈당조절이 안 되면 합병증 위험 높아져 인슐린 사용이 중요해요.\n인슐린 주사는 생각보다 아프지 않고, 사용도 어렵지 않아요!\n스스로 주사하는 것이 가장 안전하며 가족도 교육을 받으면 도움을 줄 수 있어요!" },
+      { q: "당뇨병약 복용 이외에 다른 치료법이 있나요?", a: "- 당뇨·고혈압 약을 늦게 시작하려는 생각은 잘못된 인식이에요.\n고혈당·고혈압이 오래 지속되면 미세혈관·대혈관의 합병증이 발생할 수 있어요.\n        → 대혈관 합병증(동맥경화)은 초기 증상 거의 없으며, \n            뇌졸중·심근경색 발생 시 생명에 큰 위험을 초래할 수 있어요!\n일단 혈관 손상 생기면 다시 정상으로 회복이 불가능해요.\n합병증 예방을 위해 혈당·혈압을 정상 범위로 유지하는 것이 필수이고 약 복용이 중요해요!\n식사조절·운동과 함께 약을 병행해야 효과적이에요!\n고혈압약은 부작용 거의 없어 걱정할 필요 없어요!\n        → 혈압은 130/80 mmHg 이하로 유지해야 해요!\n식사조절·운동으로 체중을 감량하면 약을 줄이거나 끊을 가능성도 있어요!" },
+      { q: "운동관리를 통해 혈당이 정상화 되면 완치된건가요?", a: "- 당뇨병 관리의 기본은 식사요법과 운동요법이에요!\n제2형 당뇨 환자 대부분이 과체중이므로 체중감량이 핵심이에요!\n체중조절을 위해 식사요법 + 운동요법 병행이 반드시 필요해요!\n생활요법을 철저히 해도 혈당조절이 안 되면 약물치료(경구약·인슐린)가 필요해요!\n최근에는 초기부터 식사·운동과 함께 경구혈당강하제를 적극적으로 사용하는 것을 권장해요!\n생활습관 개선으로 혈당이 정상 유지되면 ‘완치’보다는 ‘잘 조절됨’이라는 표현이 적절해요!\n다시 과식하거나 체중 증가하면 혈당 상승 가능성이 매우 높아요!\n현재처럼 생활요법 유지하면 혈당도 안정적으로 유지될 가능성이 커요!" },
+      { q: "혈당 조절이 잘되도 합병증 검사는 해야하나요?", a: "- 제2형 당뇨병은 발병 시점이 불확실하여 진단 시 합병증 검사가 필요해요!\n혈당조절이 잘 되어도 유병 기간이 길어지면 합병증 발생이 가능해요!\n합병증 예방 및 조기 발견을 위해 정기적 합병증 검사는 필수예요!" },
+    ],
+    hyperlipidemia: [
+      { q: "고지혈증약을 평생 먹어야 하나요?", a: " - 단기간에 콜레스테롤 많은 음식을 먹으면 수치가 금방 올라갈 수 있어요!\n 하지만 식단을 다시 조절하면 정상 범위로 돌아올 수도 있어요!\n그리고 고기를 많이 먹지 않아도, 비만·당뇨·고혈압·대사증후군이 있으면\n        남는 에너지가 콜레스테롤로 변해서 쌓이기 쉬워요. 그래서 식습관 관리가 정말 중요해요!\n고지혈증 약은 중단하면 3~4주가 지나면서 약 효과가 거의 사라져요.\n 그래도 식사조절·체중감량·금연 등 생활요법을 정말 철저하게 실천할 자신이 있다면,\n        지질 수치를 정기적으로 확인하면서 약 중단을 시도해볼 수도 있어요!\n단, 약을 끊더라도 꾸준한 지질 수치 평가가 필수예요!" },
+      { q: "살을 빼면 콜레스테롤이 떨어지나요?", a: "- 체중을 약 4.5kg 정도 줄이면 LDL 콜레스테롤이 5~8% 감소한다는 연구 결과가 있어요!\n 그리고 표준체중에 가까워지는 감량일수록 콜레스테롤 개선 효과가 더 뚜렷해요!\n또 생활습관 개선 (식사, 운동, 체중관리)은 약물치료와 함께 콜레스테롤 관리의 핵심 요소예요!\n        결국 몸이 달라지는 건 생활습관이 바뀌는 순간부터거든요." },
+      { q: "고지혈증의 치료법은 어떻게 되나요?", a: "- 고지혈증 치료는 먼저 연령, 성별, 고혈압·당뇨·신장질환·심뇌혈관질환 여부 등을 고려해 \n        ‘목표 수치’를 설정해요!\n 그다음 현재 수치와 목표치의 차이를 보고 치료 방향을 결정해요.\n두 수치의 차이가 크면 생활습관 개선과 약물치료를 함께 시작하고,  차이가 크지 않으면\n        일단 식이조절·운동·체중감량·금연 같은 생활습관 개선을 먼저 시행하면서 효과를 평가해요!\n만약 생활습관 개선만으로는 목표에 도달하기 어렵다면 그때 약물치료를 시작해요.\n그리고 약물치료를 시작한 이후에는 나이가 들수록 동반질환 위험이 높아지기 때문에,\n        심뇌혈관질환을 예방하고 진행을 늦추기 위해 약물치료가 장기적으로 유지되는 경우가 많아요!" },
+      { q: "심혈관계질환 환자는 모두 콜레스테롤이 높은가요?", a: "- 콜레스테롤이 높아지면 심혈관질환으로 인한 사망 위험이 증가해요!\n 반대로 약물로 콜레스테롤을 잘 낮추면 심혈관계 사망을 줄이는 효과가 있어요.\n심혈관질환이 없는 사람이라도 콜레스테롤이 높으면 질환 발생과 사망 위험이 올라가기 때문에\n       콜레스테롤 조절은 예방과 관리 모두에서 정말 중요한 요소예요!\n이미 심혈관질환을 겪은 적이 있는 경우에는 콜레스테롤을 더 낮은 목표로 유지해야 해요.\n LDL 콜레스테롤은 100mg/dL 미만, 이상적으로는 70mg/dL 미만이 좋아요!\n그리고 LDL을 조절한 후에는 Non-HDL 콜레스테롤(총콜레스테롤–HDL)도 함께 관리해요.\n Non-HDL 목표는 일반적으로 130mg/dL 미만, 고위험군은 100mg/dL 미만이에요!" },
+      { q: "LDL을 낮추기 위해선 어떤 관리를 해아하나요?", a: "- LDL 콜레스테롤이 높을 때는 연령, 성별, 고혈압·당뇨·신장질환·심뇌혈관질환 여부 등을 고려해서\n       개인별 목표치를 먼저 설정해야 해요!\n현재 LDL 수치와 목표치의 차이가 크면 생활습관 개선과 약물치료를 동시에 시작하고\n        격차가 크지 않다면 생활습관 개선만 먼저 시행하면서 그 효과를 평가해요!\n생활습관 개선만으로 목표에 도달하기 어렵다면 그때 약물치료를 추가하게 돼요.\n그리고 생활습관 개선의 핵심은 저지방·저포화지방 식이처럼 지방 섭취를 줄이고\n        운동요법과 체중감량을 함께 실천하는 거예요!\n 이런 관리가 LDL 콜레스테롤 조절에 정말 중요한 역할을 해요!" },
+      { q: "HDL을 높이기 위해서는 어떻게 하면 좋을까요?", a: "- HDL 콜레스테롤을 높이려면 신체활동을 늘리는 것이 가장 효과적이에요!\n 그리고 흡연자는 금연이 필수인데, 금연만 해도 HDL이 자연스럽게 올라가요.\nHDL을 높이는 약물이 여러 가지 개발되긴 했지만 HDL 수치를 올리는 것만으로 \n        심혈관질환을 예방한다는 확실한 근거는 없어요.\n그래서 HDL 관리의 핵심은 결국 운동, 금연, 건강한 식습관 같은 생활습관 교정이에요!\n 몸이 좋아지는 건 결국 일상의 작은 변화에서 시작되니까요!" },
+    ],
+    hypertension: [
+      { q: "언제 혈압을 측정하는 것이 좋은가요?", a: "- 아침 혈압은 저녁보다 더 높게 나오는 경향이 있어요!\n 그리고 혈압은 순간순간 변하기 때문에, 안정된 상태에서 재야 정확해요.\n병원에서 아무 때나 한 번만 재는 혈압은 신뢰도가 낮아요.\n집에서 측정할 때는 정해진 조건을 잘 지키면서 엄격하게 측정해야 해요!\n운동 후에는 최소 1~2시간이 지난 뒤 혈압을 재야 하고\n담배나 커피를 마신 경우에는 30분 정도 지난 뒤에 측정해야 해요.\n술을 마신 뒤에는 혈압이 정확하게 나오지 않아요. 대체로 오르지만 개인차가 커요!\n병원에서는 최소 5분 정도 의자에 편하게 앉아 안정을 취한 뒤 혈압을 측정해야 해요!" },
+      { q: "자가혈압을 정확히 측정하려면 주의할점?", a: "- 혈압을 측정하기 30분 전에는 커피·술·담배를 피하는 게 좋아요!\n그리고 혈압을 재기 전에 미리 화장실을 다녀오면 더 정확하게 측정돼요.\n측정 전에는 최소 5분 이상 조용히 안정을 취하고,  말하지 않고 편안하게 앉은 자세를 유지해야 해요!\n다리나 발목은 꼬지 말고, 등은 의자에 살짝 기대주세요.\n팔은 책상 위에 올려 심장 높이에 맞추면서 팔꿈치는 약간 구부려 주세요.\n소매는 걷고, 팔에 맞는 크기의 커프를 준비해야 해요!\n커프의 아래쪽은 팔꿈치 위 2.5cm쯤에 위치시키고, \n        상박에는 부드럽게 감되 손가락 한 개 들어갈 정도의 여유가 적당해요.\n커프가 너무 느슨하면 실제보다 혈압이 더 높게 나올 수 있으니 주의해야 해요!" },
+      { q: "자가혈압을 재려면 어떤 기구가 필요한가요?", a: "- 정에서 혈압을 측정할 때는 디지털 혈압계가 가장 사용하기 쉬워요!\n 수은 혈압계는 혼자 쓰기 어렵고 청진기도 필요해서 실용적이지 않아요.\n요즘 디지털 혈압계는 대부분 표준화가 잘 되어 있어서 비교적 정확한 측정이 가능해요!\n반면 손목이나 손가락 혈압계는 오차가 큰 편이라 권장되지 않아요.\n집에서 가장 정확하게 측정할 수 있는 방법은 위팔에서 재는 전자식 혈압계를 사용하는 거예요!" },
+      { q: "관리 안하면 누구나 합병증이 생기나요?", a: "- 혈압이 오랫동안 높게 유지되면 심장, 신장, 뇌, 혈관에 다양한 합병증이 생길 수 있어요!\n그래서 합병증을 막으려면 혈압을 충분히 낮게 조절하는 게 정말 중요해요.\n특히 혈압이 20mmHg만 올라가도 뇌졸중 위험이 무려 2배로 증가해요!\n반대로 약물로 혈압을 4/3mmHg 정도 낮추면 뇌졸중 위험은 23%, \n        관상동맥질환은 15%, 심부전은 16%, 전체 사망률은 14%까지 감소하는 효과가 있어요!\n그러니까 혈압 조절은 생명을 지키는 일이라고 해도 과장이 아니에요!" },
+      { q: "혈압약 복용 후 측정하면 120/80보다 낮은데\n이제 약은 복용하지 않아도 되나요?", a: "- 집에서 잰 혈압만 보고 스스로 약을 중단하면 절대 안 돼요!\n특히 일부 항고혈압제는 갑자기 끊으면 혈압이 급격히 튀어 올라 위험할 수 있어요.\n목표치보다 혈압이 낮게 나와도 혼자서 약을 끊는 건 금지예요!\n약 조절은 반드시 주치의와 상담한 뒤에 진행해야 해요.\n약을 줄일 때는 용량을 조금씩 천천히 감소시키는 방식이 가장 안전하고\n체중 관리·식이 조절·운동처럼 생활습관을 철저히 관리해야 약 감량에도 도움이 돼요!\n약은 무조건 신중하게, 그리고 주치의와 함께 조절해야 한다는 점 꼭 기억하세요!" },
+      { q: "고혈압 약을 깜빡 잊어버리고 먹지 않았을 땐 \n어떻게 해야하나요?", a: "- 고혈압 약을 깜빡했다면, 기억나는 즉시 복용하면 돼요!\n 그리고 다음날은 평소대로 아침에 원래 용량으로 복용하면 충분해요.\n두 번 분량을 한꺼번에 먹는 중복 복용은 절대 금지예요!" },
+    ]
+  }
+};
+
+// --- UI Components ---
+
+const Layout = ({ children, activeTab, setActiveTab, title, showBack, onBack }) => (
+  <div className="h-screen bg-gray-100 flex justify-center items-center font-sans overflow-hidden">
+    <div className="w-full h-full max-w-md bg-white sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative">
+      <header className="bg-emerald-600 text-white p-4 shadow-md flex items-center h-14 shrink-0 z-20">
+        {showBack ? (
+          <button onClick={onBack} className="mr-3 p-1 hover:bg-emerald-700 rounded-full transition-colors">
+            <ArrowLeft size={24} />
+          </button>
+        ) : (
+          <div className="w-8" /> 
+        )}
+        <h1 className="flex-1 text-center text-lg font-bold truncate">{title}</h1>
+        <div className="w-8" /> 
+      </header>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 scrollbar-hide relative">
+        {children}
+      </main>
+      {!showBack && (
+        <nav className="bg-white border-t border-slate-200 flex justify-around items-center h-16 shrink-0 pb-1 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          {[
+            { id: 'home', icon: Home, label: '홈' },
+            { id: 'features', icon: Activity, label: '주요항목' },
+            { id: 'review', icon: Utensils, label: '리뷰쓰기' },
+            { id: 'myspace', icon: User, label: '내 공간' }
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex flex-col items-center justify-center w-full h-full gap-1 active:bg-slate-50 transition-colors ${activeTab === item.id ? 'text-emerald-600' : 'text-slate-400'}`}
+            >
+              <div className={`relative ${activeTab === item.id ? '-top-1' : ''} transition-all duration-200`}>
+                <item.icon size={24} strokeWidth={activeTab === item.id ? 2.5 : 2} />
+              </div>
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
+    </div>
+  </div>
+);
+
+const HomePage = ({ onStart }) => (
+  <div className="flex flex-col items-center h-full">
+    <div className="w-full bg-emerald-600 text-white px-6 pt-4 pb-10 rounded-b-[2.5rem] shadow-lg flex flex-col items-center text-center relative z-10">
+      <div className="bg-white p-4 rounded-full shadow-md mb-4 animate-pulse">
+          <Heart size={48} className="text-emerald-500 fill-emerald-50" />
+      </div>
+      <h2 className="text-3xl font-black mb-1 tracking-tight">당고당 가이드</h2>
+      <p className="text-xs font-medium text-emerald-100 opacity-90">
+        당뇨, 고지혈증, 고혈압 당신을 위한 가이드
+      </p>
+    </div>
+    <div className="flex-1 w-full px-6 -mt-6 relative z-20 overflow-y-auto pb-4">
+      <div className="bg-white rounded-2xl shadow-md p-6 space-y-6 border border-slate-100">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="bg-blue-100 p-2 rounded-lg text-blue-600 shrink-0 mt-1"><Utensils size={18} /></div>
+            <p className="text-sm text-slate-600 leading-relaxed"><strong className="text-slate-800 block mb-1">안심하고 드세요</strong>이 사이트는 당뇨, 고지혈증, 고혈압 환자들이 외식 시 <span className="text-emerald-600 font-bold">먹으면 좋은 음식</span>과 <span className="text-rose-500 font-bold">피해야 하는 음식</span>에 대해 알려줍니다.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="bg-yellow-100 p-2 rounded-lg text-yellow-600 shrink-0 mt-1"><Activity size={18} /></div>
+            <p className="text-sm text-slate-600 leading-relaxed"><strong className="text-slate-800 block mb-1">예방이 중요해요</strong>질환을 앓고 있지 않은 분도 <span className="text-emerald-600 font-bold">예방 목적</span>으로 사용할 수 있습니다.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600 shrink-0 mt-1"><ThumbsUp size={18} /></div>
+            <p className="text-sm text-slate-600 leading-relaxed"><strong className="text-slate-800 block mb-1">모두를 위한 건강 식단</strong>이 사이트를 통해 질환을 가진 분들은 <span className="text-emerald-600 font-bold">식단 관리</span>가 가능하고, 다른 분들도 더 <span className="text-emerald-600 font-bold">건강한 식단</span>을 완성시킬 수 있습니다!</p>
+          </div>
+        </div>
+        <div className="pt-2 border-t border-slate-100">
+           <div className="grid grid-cols-3 gap-3">
+            {Object.values(DISEASES).map((d, i) => (
+              <div key={i} className={`text-center py-2 rounded-lg ${d.color} bg-opacity-50`}><span className="text-xs font-bold">{d.label}</span></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="w-full px-6 pb-6 pt-2">
+      <button onClick={onStart} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-emerald-700 active:scale-95 transition-all">건강 관리 시작하기</button>
+    </div>
+  </div>
+);
+
+const FeaturesHub = ({ onNavigate }) => {
+  const MenuCard = ({ icon: Icon, title, desc, color, onClick }) => (
+    <button onClick={onClick} className="w-full bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 active:bg-slate-50 transition-transform active:scale-98">
+      <div className={`p-3 rounded-xl ${color}`}><Icon size={24} /></div>
+      <div className="text-left flex-1"><h3 className="font-bold text-slate-800">{title}</h3><p className="text-xs text-slate-400 mt-0.5">{desc}</p></div>
+      <ChevronRight className="text-slate-300" size={20} />
+    </button>
+  );
+  return (
+    <div className="p-5 space-y-4">
+      <div className="mb-2"><h2 className="text-lg font-bold text-slate-800">주요 기능</h2><p className="text-sm text-slate-500">원하는 서비스를 선택해주세요</p></div>
+      <MenuCard icon={MapPin} title="식당 위치 검색" desc="내 주변 안심 식당 & 메뉴 추천" color="bg-orange-100 text-orange-600" onClick={() => onNavigate('restaurant')} />
+      <MenuCard icon={Utensils} title="나의 영양 기록" desc="이번 주 식단 분석 리포트" color="bg-green-100 text-green-600" onClick={() => onNavigate('nutrition')} />
+      <MenuCard icon={BookOpen} title="건강 지식" desc="질환별 식이요법 & 운동 가이드" color="bg-blue-100 text-blue-600" onClick={() => onNavigate('knowledge')} />
+      <div className="mt-6 bg-slate-100 p-4 rounded-2xl"><h3 className="text-sm font-bold text-slate-600 mb-2">오늘의 건강 팁 💡</h3><p className="text-xs text-slate-500 leading-relaxed">식사 전 물 한 잔은 포만감을 주어 과식을 막아줍니다. 오늘도 건강한 하루 보내세요!</p></div>
+    </div>
+  );
+};
+
+const RestaurantSearch = ({ onBack }) => {
+  const [step, setStep] = useState('prompt'); // prompt, list, detail
+  const [loading, setLoading] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState('부산진구 동천로 85번길 31-5');
+  const [showModal, setShowModal] = useState(false);
+  const [manualInput, setManualInput] = useState('');
+  const [activeRestaurant, setActiveRestaurant] = useState(null);
+
+  const handleSearch = (mode) => {
+    if (mode === 'manual') { setShowModal(true); return; }
+    setLoading(true);
+    setCurrentLocation('부산진구 동천로 85번길 31-5'); 
+    setTimeout(() => { setLoading(false); setStep('list'); }, 1200);
+  };
+
+  const handleManualSubmit = () => {
+    if (!manualInput.trim()) return;
+    setLoading(true);
+    setShowModal(false);
+    setCurrentLocation(manualInput);
+    setTimeout(() => { setLoading(false); setStep('list'); }, 1000);
+  };
+
+  const handleRestaurantClick = (rest) => {
+    setActiveRestaurant(rest);
+    setStep('detail');
+  };
+
+  const handleBackToList = () => {
+    setActiveRestaurant(null);
+    setStep('list');
+  };
+
+  const StatusBadge = ({ type, text }) => {
+    const config = {
+      good: { style: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+      caution: { style: 'bg-amber-100 text-amber-700 border-amber-200' },
+      bad: { style: 'bg-rose-100 text-rose-700 border-rose-200' }
+    };
+    const style = config[type]?.style || 'bg-slate-100 text-slate-700 border-slate-200';
+    return <span className={`text-[10px] font-bold px-2 py-1 rounded border ${style}`}>{text}</span>;
+  };
+
+  // Step 1: Prompt View
+  if (step === 'prompt') {
+    return (
+      <>
+        {showModal && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
+              <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-bold text-slate-800">어디를 검색할까?</h3><button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button></div>
+              <div className="space-y-4">
+                <div><input type="text" autoFocus value={manualInput} onChange={(e) => setManualInput(e.target.value)} placeholder="예: 강남구, 해운대구" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm" /></div>
+                <button onClick={handleManualSubmit} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all">검색하기</button>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="h-full flex flex-col p-6">
+          <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center animate-bounce"><MapPin size={40} className="text-slate-400" /></div>
+            <div><h2 className="text-xl font-bold text-slate-800">주변 식당 찾기</h2><p className="text-slate-500 text-sm mt-2">현재 위치를 기반으로<br />질환별 맞춤 메뉴를 추천해드려요.</p></div>
+          </div>
+          <div className="space-y-3 mb-4">
+            <button onClick={() => handleSearch('gps')} className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">{loading ? <span className="animate-pulse">위치 확인 중...</span> : <><MapPin size={18} /> 내 위치로 검색</>}</button>
+            <button onClick={() => handleSearch('manual')} className="w-full py-4 bg-white text-emerald-600 border border-emerald-200 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 active:bg-slate-50"><Search size={18} /> 직접 입력하기</button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Step 2: List View
+  if (step === 'list') {
+    return (
+      <div className="pb-4 bg-slate-50 min-h-full">
+        <div className="bg-white px-4 py-3 border-b border-slate-100 sticky top-0 z-10 shadow-sm flex justify-between items-center">
+          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 truncate max-w-[70%]"><MapPin size={12} /> {currentLocation}</span>
+          <button onClick={() => setStep('prompt')} className="text-xs text-emerald-600 font-medium shrink-0">재검색</button>
+        </div>
+        <div className="p-4 space-y-3">
+          <h3 className="text-sm font-bold text-slate-600 ml-1 mb-2">주변 식당 {RESTAURANTS.length}곳</h3>
+          {RESTAURANTS.map(rest => (
+            <button 
+              key={rest.id} 
+              onClick={() => handleRestaurantClick(rest)}
+              className="w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 hover:bg-slate-50 active:scale-[0.99] transition-all text-left"
+            >
+              <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-2xl shrink-0 border border-slate-200">
+                {rest.image}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start mb-1">
+                  <h3 className="font-bold text-slate-800 truncate text-base">{rest.name}</h3>
+                  <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{rest.distance}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="bg-slate-100 px-1.5 py-0.5 rounded font-medium text-slate-600">{rest.type}</span>
+                  <div className="flex items-center gap-0.5">
+                    <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                    <span className="font-bold">{rest.rating}</span>
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="text-slate-300" size={20} />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Step 3: Detail View
+  if (step === 'detail' && activeRestaurant) {
+    return (
+      <div className="bg-white min-h-full pb-8 relative">
+        <div className="sticky top-0 z-10 bg-white border-b border-slate-100">
+          <div className="px-4 py-3 flex items-center">
+            <button onClick={handleBackToList} className="p-1 -ml-1 mr-2 hover:bg-slate-100 rounded-full transition-colors">
+              <ArrowLeft size={24} className="text-slate-600" />
+            </button>
+            <h2 className="font-bold text-lg text-slate-800 truncate">{activeRestaurant.name}</h2>
+          </div>
+        </div>
+
+        <div className="p-5 pb-0">
+          <div className="flex gap-4 items-center mb-6">
+            <div className="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center text-4xl border border-slate-200 shadow-sm">
+              {activeRestaurant.image}
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold">{activeRestaurant.type}</span>
+                <div className="flex items-center gap-1 text-yellow-500">
+                  <Star size={14} fill="currentColor" />
+                  <span className="font-bold text-sm">{activeRestaurant.rating}</span>
+                </div>
+              </div>
+              <p className="text-sm text-slate-500">{activeRestaurant.distance} · 부산진구 동천로</p>
+            </div>
+          </div>
+           
+          <h3 className="font-bold text-lg mb-4 border-b border-slate-100 pb-2">메뉴 및 건강 가이드</h3>
+        </div>
+
+        <div className="px-4 space-y-4">
+          {activeRestaurant.menus.map((menu, idx) => (
+            <div key={idx} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <div className="mb-2">
+                <h4 className="font-bold text-slate-800 text-base mb-2">{menu.name}</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {menu.tags.map((tag, tIdx) => (
+                    <StatusBadge key={tIdx} type={tag.type} text={tag.text} />
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded-xl text-xs text-slate-600 leading-relaxed border border-slate-200 shadow-sm">
+                <span className="font-bold text-emerald-600 mr-1">💡 영양 코멘트:</span>
+                {menu.reason}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const NutritionLog = ({ onBack }) => {
+  const [subView, setSubView] = useState('main'); // main, weekly, analysis
+  const [inputs, setInputs] = useState({ morning: '', lunch: '', dinner: '' });
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const [weeklyLogs, setWeeklyLogs] = useState({
+    days: ['월', '화', '수', '목', '금', '토', '일'],
+    meals: {
+      breakfast: ['계란', '고구마,\n계란', '계란후라이,\n밥, 김치', '토마토,\n바게트\n빵', '김밥', '계란', '라면'],
+      lunch: ['닭볶음탕,\n밥,\n김치', '우육면', '마라탕', '한우 사\n골 쌀국\n수', '떡볶이,\n튀김', '치즈버\n거', '치킨 야\n채 카레'],
+      dinner: ['육개장,\n밥', '김치찌\n개, 밥', '닭가슴\n살 샐러\n드', '한우소\n막창', '치킨 샐\n러드', '고구마,\n계란', '육회덮\n밥']
+    }
+  });
+
+  const handleInputChange = (time, value) => {
+    setInputs(prev => ({ ...prev, [time]: value }));
+  };
+
+  const handleSaveLog = () => {
+    // 현재 요일 구하기 (월=0, ..., 일=6 으로 보정)
+    // new Date().getDay() : 0(일) ~ 6(토)
+    const dayIndex = (new Date().getDay() + 6) % 7; 
+
+    setWeeklyLogs(prev => {
+      const newMeals = { ...prev.meals };
+      newMeals.breakfast = [...prev.meals.breakfast];
+      newMeals.lunch = [...prev.meals.lunch];
+      newMeals.dinner = [...prev.meals.dinner];
+
+      // 오늘 요일에 데이터 덮어쓰기 (입력된 값만, 없으면 기존 값 유지)
+      if (inputs.morning) newMeals.breakfast[dayIndex] = inputs.morning;
+      if (inputs.lunch) newMeals.lunch[dayIndex] = inputs.lunch;
+      if (inputs.dinner) newMeals.dinner[dayIndex] = inputs.dinner;
+
+      return { ...prev, meals: newMeals };
+    });
+
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 2000);
+  };
+
+  if (subView === 'weekly') {
+    return (
+      <div className="p-4 pb-8 min-h-full bg-slate-50 flex flex-col">
+        <div className="flex items-center mb-4 sticky top-0 bg-slate-50 pt-2 pb-2 z-10">
+           <button onClick={() => setSubView('main')} className="mr-3 p-1 hover:bg-slate-200 rounded-full transition-colors">
+            <ArrowLeft size={24} className="text-slate-600" />
+          </button>
+          <h3 className="font-bold text-lg text-slate-800">이번주 식단 기록</h3>
+        </div>
+        
+        {/* Vertical List View (No Horizontal Scroll) */}
+        <div className="space-y-3">
+          {weeklyLogs.days.map((day, i) => (
+            <div key={day} className={`bg-white rounded-2xl shadow-sm border overflow-hidden ${(new Date().getDay() + 6) % 7 === i ? 'border-emerald-200 ring-2 ring-emerald-100' : 'border-slate-100'}`}>
+              <div className={`px-4 py-2 border-b flex items-center justify-between ${ (new Date().getDay() + 6) % 7 === i ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100' }`}>
+                <span className={`font-bold text-sm ${ (new Date().getDay() + 6) % 7 === i ? 'text-emerald-700' : 'text-slate-600' }`}>{day}요일</span>
+                <span className="text-xs text-slate-400 font-medium">
+                  { (new Date().getDay() + 6) % 7 === i ? '오늘' : '' }
+                </span>
+              </div>
+              <div className="p-3 grid grid-cols-3 gap-2 text-center divide-x divide-slate-100">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-400">아침</span>
+                  <span className="text-xs text-slate-700 whitespace-pre-line leading-tight">{weeklyLogs.meals.breakfast[i]}</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-400">점심</span>
+                  <span className="text-xs text-slate-700 whitespace-pre-line leading-tight">{weeklyLogs.meals.lunch[i]}</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-400">저녁</span>
+                  <span className="text-xs text-slate-700 whitespace-pre-line leading-tight">{weeklyLogs.meals.dinner[i]}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (subView === 'analysis') {
+    return (
+      <div className="p-6 pb-8 min-h-full bg-slate-50">
+        <div className="flex items-center mb-6 sticky top-0 bg-slate-50 pt-2 pb-2 z-10">
+           <button onClick={() => setSubView('main')} className="mr-3 p-1 hover:bg-slate-200 rounded-full transition-colors">
+            <ArrowLeft size={24} className="text-slate-600" />
+          </button>
+          <h3 className="font-bold text-xl text-slate-800">영양 분석</h3>
+        </div>
+        
+        <div className="space-y-8">
+          {/* Chart 1 */}
+          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <h4 className="font-bold text-slate-700 mb-4 text-sm">주요 영양소 비율</h4>
+            <div className="flex justify-center gap-4 mb-4 text-xs font-bold text-slate-500 flex-wrap">
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-cyan-300"></div>탄수화물</div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-sky-400"></div>단백질</div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-sky-600"></div>지방</div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-slate-500"></div>지질</div>
+            </div>
+            <div className="h-16 w-full rounded-full overflow-hidden flex relative shadow-inner">
+               <div className="h-full bg-cyan-300 w-[35%] flex items-center justify-center text-white text-xs font-bold">35%</div>
+               <div className="h-full bg-sky-400 w-[35%] flex items-center justify-center text-white text-xs font-bold">35%</div>
+               <div className="h-full bg-sky-600 w-[18%] flex items-center justify-center text-white text-xs font-bold">18%</div>
+               <div className="h-full bg-slate-500 flex-1 flex items-center justify-center text-white text-xs font-bold">12%</div>
+            </div>
+          </div>
+
+          {/* Chart 2 */}
+          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <h4 className="font-bold text-slate-700 mb-4 text-sm">주의 영양소 섭취량</h4>
+            <div className="flex justify-center gap-4 mb-4 text-xs font-bold text-slate-500 flex-wrap">
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-cyan-300"></div>나트륨</div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-sky-400"></div>식이섬유</div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-sky-600"></div>콜레스테롤</div>
+            </div>
+            <div className="h-16 w-full rounded-full overflow-hidden flex relative shadow-inner">
+               <div className="h-full bg-cyan-300 w-[40%] flex items-center justify-center text-white text-xs font-bold">과다</div>
+               <div className="h-full bg-sky-400 w-[40%] flex items-center justify-center text-white text-xs font-bold">적정</div>
+               <div className="h-full bg-sky-600 flex-1 flex items-center justify-center text-white text-xs font-bold">주의</div>
+            </div>
+          </div>
+
+          {/* Analysis Comments */}
+          <div className="bg-rose-50 p-5 rounded-3xl border border-rose-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-white p-1.5 rounded-full shadow-sm">
+                <MessageSquareQuote className="text-rose-500" size={20} />
+              </div>
+              <h4 className="font-bold text-rose-700 text-sm">AI 영양 분석 코멘트</h4>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-white p-3 rounded-2xl text-sm text-slate-600 leading-relaxed shadow-sm">
+                <span className="font-bold text-rose-500 mr-1">⚠️ 나트륨 & 콜레스테롤 경고:</span>
+                이번 주는 <span className="font-bold text-slate-700">나트륨</span> 섭취가 '과다'로 나타났고, <span className="font-bold text-slate-700">콜레스테롤</span> 수치도 '주의' 단계예요! 특히 국물 요리와 튀김 섭취가 많았던 것이 원인으로 보여요.
+              </div>
+              <div className="bg-white p-3 rounded-2xl text-sm text-slate-600 leading-relaxed shadow-sm">
+                <span className="font-bold text-emerald-600 mr-1">💡 맞춤 개선 팁:</span>
+                다음 식사 때는 짠 국물은 남기고, 기름진 튀김 대신 <span className="font-bold text-slate-700">구운 생선</span>이나 <span className="font-bold text-slate-700">신선한 채소</span> 위주의 식단을 구성해보세요. 물을 자주 마셔 나트륨 배출을 돕는 것도 좋은 방법입니다!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 pb-8 h-full flex flex-col bg-white relative">
+      {showSuccess && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-emerald-600 text-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-3 transform scale-110">
+            <div className="bg-white/20 p-3 rounded-full"><Save size={32} /></div>
+            <div className="text-center">
+              <h3 className="font-bold text-lg">기록 저장 완료!</h3>
+              <p className="text-xs opacity-90 mt-1">오늘 식단이 업데이트되었어요.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-6">
+          <PenTool className="text-emerald-600" size={24} />
+          <h3 className="font-bold text-xl text-slate-800">오늘의 식단 입력</h3>
+        </div>
+        
+        <div className="space-y-5">
+          <div>
+            <label className="text-sm font-bold text-slate-500 mb-1 block ml-1">아침 식사</label>
+            <input 
+              type="text" 
+              value={inputs.morning}
+              onChange={(e) => handleInputChange('morning', e.target.value)}
+              placeholder="예: 현미밥, 미역국" 
+              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" 
+            />
+          </div>
+          <div>
+            <label className="text-sm font-bold text-slate-500 mb-1 block ml-1">점심 식사</label>
+            <input 
+              type="text" 
+              value={inputs.lunch}
+              onChange={(e) => handleInputChange('lunch', e.target.value)}
+              placeholder="예: 샐러드, 샌드위치" 
+              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" 
+            />
+          </div>
+          <div>
+            <label className="text-sm font-bold text-slate-500 mb-1 block ml-1">저녁 식사</label>
+            <input 
+              type="text" 
+              value={inputs.dinner}
+              onChange={(e) => handleInputChange('dinner', e.target.value)}
+              placeholder="예: 닭가슴살, 고구마" 
+              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" 
+            />
+          </div>
+          <button 
+            onClick={handleSaveLog}
+            className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 mt-2"
+          >
+            <Save size={18} />
+            기록 저장하기
+          </button>
+        </div>
+      </div>
+
+      <div className="pt-6 border-t border-slate-100 mt-6 grid grid-cols-2 gap-3">
+        <button 
+          onClick={() => setSubView('weekly')}
+          className="flex flex-col items-center justify-center p-4 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-colors gap-2"
+        >
+          <Calendar size={24} />
+          <span className="font-bold text-sm">이번 주 식단 보기</span>
+        </button>
+        <button 
+          onClick={() => setSubView('analysis')}
+          className="flex flex-col items-center justify-center p-4 bg-purple-50 text-purple-700 rounded-2xl hover:bg-purple-100 transition-colors gap-2"
+        >
+          <PieChart size={24} />
+          <span className="font-bold text-sm">나의 영양 분석 보기</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const HealthKnowledge = ({ onBack }) => {
+  const [category, setCategory] = useState('diet');
+  const [disease, setDisease] = useState(null);
+  const [expandedFaq, setExpandedFaq] = useState(null);
+
+  const Content = () => {
+    // Random Video selection logic using useMemo to keep it stable during re-renders but change when disease changes
+    const videos = useMemo(() => KNOWLEDGE_DATA['exercise']?.[disease]?.videos || [], [disease]);
+    const randomVideoId = useMemo(() => {
+        if (videos && videos.length > 0) {
+            return videos[Math.floor(Math.random() * videos.length)];
+        }
+        return null;
+    }, [videos]);
+
+    if (!disease) return (
+      <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-center">
+        <BookOpen size={48} className="mb-4 opacity-20" />
+        <p>궁금한 질환을<br/>위에서 선택해주세요!</p>
+      </div>
+    );
+
+    const currentData = KNOWLEDGE_DATA[category]?.[disease];
+
+    if (category === 'faq' && Array.isArray(currentData)) {
+      return (
+        <div className="space-y-3 pb-6">
+          {currentData.map((item, idx) => (
+            <div key={idx} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+              <button onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)} className="w-full text-left p-4 flex justify-between items-start gap-3 hover:bg-slate-50 active:bg-slate-100">
+                <span className="text-sm font-bold text-slate-700 leading-relaxed flex-1 whitespace-pre-line">Q. {item.q}</span>
+                <ChevronDown size={18} className={`text-slate-400 transition-transform ${expandedFaq === idx ? 'rotate-180' : ''}`} />
+              </button>
+              {expandedFaq === idx && (
+                <div className="p-4 pt-0 bg-slate-50"><div className="pt-3 border-t border-slate-200 text-sm text-slate-600 leading-relaxed whitespace-pre-line">{item.a}</div></div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (currentData && currentData.sections) {
+       return (
+        <div className="space-y-6">
+          {currentData.sections.map((section, idx) => (
+            <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+              <div className="flex items-center gap-2 mb-4">
+                 <span className={`px-2 py-1 rounded text-xs font-bold ${DISEASES[disease].color}`}>{DISEASES[disease].label}</span>
+                 <span className="font-bold text-slate-800">{section.title}</span>
+              </div>
+              <p className="text-slate-600 leading-7 text-sm whitespace-pre-line">{section.content}</p>
+            </div>
+          ))}
+          {randomVideoId && (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div className="flex items-center gap-2 mb-4">
+                 <span className="font-bold text-slate-800">추천 운동 영상</span>
+              </div>
+               <div className="bg-slate-50 rounded-xl p-8 flex flex-col items-center text-center border border-slate-200">
+                 <PlayCircle size={48} className="text-red-500 mb-3" />
+                 <a 
+                   href={`https://www.youtube.com/watch?v=${randomVideoId}`}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="flex items-center gap-2 bg-red-600 text-white px-5 py-3 rounded-xl font-bold shadow-sm hover:bg-red-700 transition-all active:scale-95"
+                 >
+                   <PlayCircle size={18} fill="currentColor" />
+                   유튜브로 영상 보러가기
+                 </a>
+               </div>
+               {videos.length > 1 && <p className="text-xs text-slate-400 mt-3 text-center">* 두 가지 추천 영상 중 하나가 랜덤으로 표시됩니다.</p>}
+            </div>
+          )}
+        </div>
+       )
+    }
+
+    if (typeof currentData === 'string') {
+      return (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 mb-4"><span className={`px-2 py-1 rounded text-xs font-bold ${DISEASES[disease].color}`}>{DISEASES[disease].label}</span><span className="font-bold text-slate-800">가이드</span></div>
+          <p className="text-slate-600 leading-7 text-sm whitespace-pre-line">{currentData}</p>
+        </div>
+      );
+    }
+
+    return <div className="text-center text-slate-400 py-10">정보를 불러올 수 없어요.</div>;
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="bg-white px-4 pt-4 pb-4 sticky top-0 z-10 border-b border-slate-100">
+        <div className="flex p-1 bg-slate-100 rounded-xl mb-4">
+          {[{ id: 'diet', label: '식이요법' }, { id: 'exercise', label: '운동' }, { id: 'faq', label: 'Q&A' }].map(tab => (
+            <button key={tab.id} onClick={() => { setCategory(tab.id); setDisease(null); }} className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${category === tab.id ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}>{tab.label}</button>
+          ))}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+          {Object.entries(DISEASES).map(([key, info]) => (
+            <button key={key} onClick={() => setDisease(key)} className={`px-4 py-2 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${disease === key ? `${info.color} ${info.border}` : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>{info.label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-50"><Content /></div>
+    </div>
+  );
+};
+
+const ReviewPage = ({ onAddReview }) => {
+  const [form, setForm] = useState({ name: '', rating: 5, content: '' });
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleSubmit = () => {
+    if (!form.name.trim() || !form.content.trim()) {
+      alert("식당 이름과 내용을 입력해주세요!");
+      return;
+    }
+     
+    onAddReview(form);
+    setShowSuccess(true);
+    setForm({ name: '', rating: 5, content: '' });
+     
+    // 2초 후 알림 닫기
+    setTimeout(() => setShowSuccess(false), 2000);
+  };
+
+  return (
+    <div className="p-6 pb-10 h-full relative">
+      {showSuccess && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-emerald-600 text-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-3 transform scale-110">
+            <div className="bg-white/20 p-3 rounded-full"><ThumbsUp size={32} /></div>
+            <div className="text-center">
+              <h3 className="font-bold text-lg">리뷰 등록 완료!</h3>
+              <p className="text-xs opacity-90 mt-1">'내 공간'에서 확인해보세요.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="text-center mb-8">
+        <h2 className="text-xl font-bold text-slate-800">리뷰 작성</h2>
+        <p className="text-xs text-slate-400 mt-1">다른 분들의 건강을 위해 경험을 공유해주세요</p>
+      </div>
+      
+      <div className="space-y-5">
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-500 ml-1">식당 이름</label>
+          <input 
+            type="text" 
+            value={form.name}
+            onChange={(e) => setForm({...form, name: e.target.value})}
+            className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" 
+            placeholder="예: 건강한 밥상" 
+          />
+        </div>
+        
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-500 ml-1">건강 점수</label>
+          <div className="flex gap-3 justify-center bg-white p-4 rounded-2xl border border-slate-200">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button 
+                key={star} 
+                onClick={() => setForm({...form, rating: star})}
+                className="focus:outline-none transition-transform active:scale-90"
+              >
+                <Star 
+                  size={32} 
+                  className={`${star <= form.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'} transition-colors`} 
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-500 ml-1">후기 내용</label>
+          <textarea 
+            value={form.content}
+            onChange={(e) => setForm({...form, content: e.target.value})}
+            className="w-full p-4 bg-white border border-slate-200 rounded-2xl h-40 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all resize-none" 
+            placeholder="음식은 어땠나요? 자극적이지 않았나요?"
+          ></textarea>
+        </div>
+        
+        <button 
+          onClick={handleSubmit}
+          className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform"
+        >
+          등록 완료
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const MySpace = ({ reviews }) => {
+  const [showReviewList, setShowReviewList] = useState(false);
+
+  return (
+    <div className="bg-slate-50 h-full relative">
+      {showReviewList && (
+        <div className="absolute inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-bottom-10">
+          <div className="p-4 border-b border-slate-100 flex items-center gap-3 sticky top-0 bg-white z-10">
+            <button onClick={() => setShowReviewList(false)}><ArrowLeft size={24} className="text-slate-600" /></button>
+            <h3 className="font-bold text-lg text-slate-800">내가 쓴 리뷰</h3>
+          </div>
+          <div className="p-4 space-y-3 overflow-y-auto flex-1 bg-slate-50">
+            {reviews.length === 0 ? (
+              <div className="text-center text-slate-400 py-10">아직 작성한 리뷰가 없어요.</div>
+            ) : (
+              reviews.map((review, i) => (
+                <div key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-bold text-slate-800">{review.name}</h4>
+                    <div className="flex items-center gap-1 text-yellow-400">
+                      <Star size={14} fill="currentColor" />
+                      <span className="text-xs font-bold text-slate-500">{review.rating}</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl">{review.content}</p>
+                  <span className="text-[10px] text-slate-400 mt-2 block text-right">{review.date}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white p-6 pb-8 rounded-b-[2rem] shadow-sm mb-6">
+        <div className="flex items-center gap-5">
+          <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-white shadow-md flex items-center justify-center"><User size={40} className="text-slate-300" /></div>
+          <div><h2 className="text-xl font-bold text-slate-800">건강이 최고야 님</h2><button className="text-xs text-emerald-600 font-bold mt-1 bg-emerald-50 px-2 py-1 rounded-full">내 정보 수정 &gt;</button></div>
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-8">
+          <button onClick={() => setShowReviewList(true)} className="text-center active:scale-95 transition-transform">
+            <div className="font-bold text-lg text-slate-800">{reviews.length}</div>
+            <div className="text-xs text-emerald-600 font-bold">리뷰 (확인하기)</div>
+          </button>
+          <div className="text-center border-x border-slate-100"><div className="font-bold text-lg text-slate-800">5</div><div className="text-xs text-slate-400">스크랩</div></div>
+          <div className="text-center"><div className="font-bold text-lg text-slate-800">85점</div><div className="text-xs text-slate-400">건강점수</div></div>
+        </div>
+      </div>
+      <div className="px-4 space-y-3">
+        <button className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50"><div className="flex items-center gap-3"><div className="bg-rose-100 p-2 rounded-lg text-rose-600"><Heart size={18} /></div><span className="font-bold text-slate-700 text-sm">관심 질환 설정</span></div><ChevronRight size={18} className="text-slate-300" /></button>
+        <button className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50"><div className="flex items-center gap-3"><div className="bg-blue-100 p-2 rounded-lg text-blue-600"><BookOpen size={18} /></div><span className="font-bold text-slate-700 text-sm">스크랩한 건강 정보</span></div><ChevronRight size={18} className="text-slate-300" /></button>
+        <button className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50"><div className="flex items-center gap-3"><div className="bg-slate-100 p-2 rounded-lg text-slate-600"><AlertCircle size={18} /></div><span className="font-bold text-slate-700 text-sm">공지사항 & 문의</span></div><ChevronRight size={18} className="text-slate-300" /></button>
+      </div>
+      <div className="p-6 text-center"><button className="text-xs text-slate-400 underline">로그아웃</button></div>
+    </div>
+  );
+};
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('home');
+  const [featurePage, setFeaturePage] = useState(null);
+   
+  // 리뷰 상태 관리 (기본 더미 데이터 포함)
+  const [reviews, setReviews] = useState([
+    { name: '샐러드 바스켓', rating: 5, content: '연어 샐러드 정말 신선하고 맛있어요! 소스 따로 달라고 하니 주셔서 좋았습니다.', date: '2023.10.20' },
+    { name: '한다솥', rating: 4, content: '건강한 맛이라 좋았는데 사람이 좀 많아서 대기했어요.', date: '2023.10.25' }
+  ]);
+
+  const handleAddReview = (newReview) => {
+    const reviewWithDate = {
+      ...newReview,
+      date: new Date().toLocaleDateString()
+    };
+    setReviews([reviewWithDate, ...reviews]);
+  };
+
+  const getTitle = () => {
+    if (activeTab === 'home') return '당고당 가이드';
+    if (activeTab === 'review') return '리뷰 쓰기';
+    if (activeTab === 'myspace') return '내 공간';
+    if (featurePage === 'restaurant') return '식당 찾기';
+    if (featurePage === 'nutrition') return '영양 기록';
+    if (featurePage === 'knowledge') return '건강 지식';
+    return '주요 항목';
+  };
+
+  const renderContent = () => {
+    if (activeTab === 'home') return <HomePage onStart={() => setActiveTab('features')} />;
+    if (activeTab === 'review') return <ReviewPage onAddReview={handleAddReview} />;
+    if (activeTab === 'myspace') return <MySpace reviews={reviews} />;
+    
+    if (activeTab === 'features') {
+      if (featurePage === 'restaurant') return <RestaurantSearch onBack={() => setFeaturePage(null)} />;
+      if (featurePage === 'nutrition') return <NutritionLog onBack={() => setFeaturePage(null)} />;
+      if (featurePage === 'knowledge') return <HealthKnowledge onBack={() => setFeaturePage(null)} />;
+      return <FeaturesHub onNavigate={setFeaturePage} />;
+    }
+    return null;
+  };
+
+  return (
+    <Layout 
+      activeTab={activeTab} 
+      setActiveTab={(tab) => { setActiveTab(tab); setFeaturePage(null); }}
+      title={getTitle()}
+      showBack={activeTab === 'features' && featurePage !== null && !(activeTab === 'features' && featurePage === 'restaurant' && (featurePage === 'restaurant' && activeTab === 'features' && false))} 
+      onBack={() => setFeaturePage(null)}
+    >
+      {renderContent()}
+    </Layout>
+  );
+};
+
+export default App;
