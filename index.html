@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Home, MapPin, Utensils, BookOpen, User, Activity, ChevronRight, ArrowLeft, Star, Heart, AlertCircle, ThumbsUp, Search, Info, X, Calendar, PieChart, PenTool, Save, MessageSquareQuote, PlayCircle, Minimize2, Maximize2, ChevronDown, MessageCircle, Send, MoreVertical, ExternalLink } from 'lucide-react';
+import { Home, MapPin, Utensils, BookOpen, User, Activity, ChevronRight, ArrowLeft, Star, Heart, AlertCircle, ThumbsUp, Search, Info, X, Calendar, PieChart, PenTool, Save, MessageSquareQuote, PlayCircle, Minimize2, Maximize2, ChevronDown, MessageCircle, Send, MoreVertical, ExternalLink, Check, Bell } from 'lucide-react';
 
 // --- Mock Data (데이터) ---
 
@@ -1212,57 +1212,196 @@ const ReviewPage = ({ onAddReview }) => {
   );
 };
 
-const MySpace = ({ reviews }) => {
-  const [showReviewList, setShowReviewList] = useState(false);
+const MySpace = ({ reviews, userProfile, onUpdateProfile }) => {
+  const [view, setView] = useState('main'); // 'main', 'reviews', 'edit-profile', 'diseases', 'scraps', 'notices'
+  const [tempName, setTempName] = useState(userProfile.name);
+  const [diseases, setDiseases] = useState({ diabetes: true, hyperlipidemia: false, hypertension: true });
+
+  const handleSaveProfile = () => {
+    onUpdateProfile({ ...userProfile, name: tempName });
+    setView('main');
+  };
+
+  const toggleDisease = (key) => {
+    setDiseases(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Sub-components for views
+  const renderView = () => {
+    switch (view) {
+      case 'reviews':
+        return (
+          <div className="absolute inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-right">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3 sticky top-0 bg-white z-10">
+              <button onClick={() => setView('main')}><ArrowLeft size={24} className="text-slate-600" /></button>
+              <h3 className="font-bold text-lg text-slate-800">내가 쓴 리뷰</h3>
+            </div>
+            <div className="p-4 space-y-3 overflow-y-auto flex-1 bg-slate-50">
+              {reviews.length === 0 ? (
+                <div className="text-center text-slate-400 py-10">아직 작성한 리뷰가 없어요.</div>
+              ) : (
+                reviews.map((review, i) => (
+                  <div key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-bold text-slate-800">{review.name}</h4>
+                      <div className="flex items-center gap-1 text-yellow-400">
+                        <Star size={14} fill="currentColor" />
+                        <span className="text-xs font-bold text-slate-500">{review.rating}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl">{review.content}</p>
+                    <span className="text-[10px] text-slate-400 mt-2 block text-right">{review.date}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        );
+
+      case 'edit-profile':
+        return (
+          <div className="absolute inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-right">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3 sticky top-0 bg-white z-10">
+              <button onClick={() => setView('main')}><ArrowLeft size={24} className="text-slate-600" /></button>
+              <h3 className="font-bold text-lg text-slate-800">내 정보 수정</h3>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-600 mb-2">이름 (닉네임)</label>
+                <input 
+                  type="text" 
+                  value={tempName} 
+                  onChange={(e) => setTempName(e.target.value)}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <button onClick={handleSaveProfile} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg">저장하기</button>
+            </div>
+          </div>
+        );
+
+      case 'diseases':
+        return (
+          <div className="absolute inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-right">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3 sticky top-0 bg-white z-10">
+              <button onClick={() => setView('main')}><ArrowLeft size={24} className="text-slate-600" /></button>
+              <h3 className="font-bold text-lg text-slate-800">관심 질환 설정</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500 mb-2">관심 있는 질환을 선택하면 맞춤 정보를 제공해드려요.</p>
+              {Object.entries(DISEASES).map(([key, info]) => (
+                <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${info.color.split(' ')[0].replace('bg-', 'bg-opacity-100 bg-')}`}></div>
+                    <span className="font-bold text-slate-700">{info.label}</span>
+                  </div>
+                  <button 
+                    onClick={() => toggleDisease(key)}
+                    className={`relative w-12 h-7 rounded-full transition-colors ${diseases[key] ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${diseases[key] ? 'translate-x-5' : ''}`}></div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'scraps':
+        return (
+          <div className="absolute inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-right">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3 sticky top-0 bg-white z-10">
+              <button onClick={() => setView('main')}><ArrowLeft size={24} className="text-slate-600" /></button>
+              <h3 className="font-bold text-lg text-slate-800">스크랩한 정보</h3>
+            </div>
+            <div className="p-4 space-y-3 overflow-y-auto bg-slate-50 flex-1">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex gap-4">
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-2xl">🍚</div>
+                <div>
+                  <h4 className="font-bold text-slate-800">한다솥 - 대게솥밥</h4>
+                  <p className="text-xs text-slate-500 mt-1">당뇨, 고지혈증 추천 메뉴</p>
+                  <span className="text-[10px] text-emerald-600 font-bold mt-2 block">2023.10.25 저장됨</span>
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex gap-4">
+                <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500"><BookOpen size={24}/></div>
+                <div>
+                  <h4 className="font-bold text-slate-800">당뇨 운동 가이드</h4>
+                  <p className="text-xs text-slate-500 mt-1">식후 1~2시간 뒤 운동하기</p>
+                  <span className="text-[10px] text-emerald-600 font-bold mt-2 block">2023.10.20 저장됨</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'notices':
+        return (
+          <div className="absolute inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-right">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3 sticky top-0 bg-white z-10">
+              <button onClick={() => setView('main')}><ArrowLeft size={24} className="text-slate-600" /></button>
+              <h3 className="font-bold text-lg text-slate-800">공지사항 & 문의</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto bg-slate-50">
+              <div className="p-4 space-y-3">
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                  <span className="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded mb-2">공지</span>
+                  <h4 className="font-bold text-slate-800 text-sm">Ver 1.0.2 업데이트 안내</h4>
+                  <p className="text-xs text-slate-500 mt-1">식당 검색 기능이 개선되었습니다.</p>
+                  <span className="text-[10px] text-slate-400 mt-2 block">2023.11.01</span>
+                </div>
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                  <span className="inline-block px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded mb-2">안내</span>
+                  <h4 className="font-bold text-slate-800 text-sm">서비스 점검 예정</h4>
+                  <p className="text-xs text-slate-500 mt-1">11월 10일 새벽 2시부터 4시까지 점검이 있습니다.</p>
+                  <span className="text-[10px] text-slate-400 mt-2 block">2023.10.28</span>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 bg-white border-t border-slate-100">
+              <button className="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+                <MessageCircle size={18} /> 1:1 문의하기
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="bg-slate-50 h-full relative">
-      {showReviewList && (
-        <div className="absolute inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-bottom-10">
-          <div className="p-4 border-b border-slate-100 flex items-center gap-3 sticky top-0 bg-white z-10">
-            <button onClick={() => setShowReviewList(false)}><ArrowLeft size={24} className="text-slate-600" /></button>
-            <h3 className="font-bold text-lg text-slate-800">내가 쓴 리뷰</h3>
-          </div>
-          <div className="p-4 space-y-3 overflow-y-auto flex-1 bg-slate-50">
-            {reviews.length === 0 ? (
-              <div className="text-center text-slate-400 py-10">아직 작성한 리뷰가 없어요.</div>
-            ) : (
-              reviews.map((review, i) => (
-                <div key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-slate-800">{review.name}</h4>
-                    <div className="flex items-center gap-1 text-yellow-400">
-                      <Star size={14} fill="currentColor" />
-                      <span className="text-xs font-bold text-slate-500">{review.rating}</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl">{review.content}</p>
-                  <span className="text-[10px] text-slate-400 mt-2 block text-right">{review.date}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+      {renderView()}
 
       <div className="bg-white p-6 pb-8 rounded-b-[2rem] shadow-sm mb-6">
         <div className="flex items-center gap-5">
           <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-white shadow-md flex items-center justify-center"><User size={40} className="text-slate-300" /></div>
-          <div><h2 className="text-xl font-bold text-slate-800">건강이 최고야 님</h2><button className="text-xs text-emerald-600 font-bold mt-1 bg-emerald-50 px-2 py-1 rounded-full">내 정보 수정 &gt;</button></div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">{userProfile.name} 님</h2>
+            <button onClick={() => setView('edit-profile')} className="text-xs text-emerald-600 font-bold mt-1 bg-emerald-50 px-2 py-1 rounded-full">내 정보 수정 &gt;</button>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-3 mt-8">
-          <button onClick={() => setShowReviewList(true)} className="text-center active:scale-95 transition-transform">
+          <button onClick={() => setView('reviews')} className="text-center active:scale-95 transition-transform">
             <div className="font-bold text-lg text-slate-800">{reviews.length}</div>
             <div className="text-xs text-emerald-600 font-bold">리뷰 (확인하기)</div>
           </button>
-          <div className="text-center border-x border-slate-100"><div className="font-bold text-lg text-slate-800">5</div><div className="text-xs text-slate-400">스크랩</div></div>
-          <div className="text-center"><div className="font-bold text-lg text-slate-800">85점</div><div className="text-xs text-slate-400">건강점수</div></div>
+          <div className="text-center border-x border-slate-100"><div className="font-bold text-lg text-slate-800">2</div><div className="text-xs text-slate-400">스크랩</div></div>
+          <div className="text-center"><div className="font-bold text-lg text-slate-800">{userProfile.score}점</div><div className="text-xs text-slate-400">건강점수</div></div>
         </div>
       </div>
       <div className="px-4 space-y-3">
-        <button className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50"><div className="flex items-center gap-3"><div className="bg-rose-100 p-2 rounded-lg text-rose-600"><Heart size={18} /></div><span className="font-bold text-slate-700 text-sm">관심 질환 설정</span></div><ChevronRight size={18} className="text-slate-300" /></button>
-        <button className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50"><div className="flex items-center gap-3"><div className="bg-blue-100 p-2 rounded-lg text-blue-600"><BookOpen size={18} /></div><span className="font-bold text-slate-700 text-sm">스크랩한 건강 정보</span></div><ChevronRight size={18} className="text-slate-300" /></button>
-        <button className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50"><div className="flex items-center gap-3"><div className="bg-slate-100 p-2 rounded-lg text-slate-600"><AlertCircle size={18} /></div><span className="font-bold text-slate-700 text-sm">공지사항 & 문의</span></div><ChevronRight size={18} className="text-slate-300" /></button>
+        <button onClick={() => setView('diseases')} className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50 transition-colors">
+          <div className="flex items-center gap-3"><div className="bg-rose-100 p-2 rounded-lg text-rose-600"><Heart size={18} /></div><span className="font-bold text-slate-700 text-sm">관심 질환 설정</span></div><ChevronRight size={18} className="text-slate-300" />
+        </button>
+        <button onClick={() => setView('scraps')} className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50 transition-colors">
+          <div className="flex items-center gap-3"><div className="bg-blue-100 p-2 rounded-lg text-blue-600"><BookOpen size={18} /></div><span className="font-bold text-slate-700 text-sm">스크랩한 건강 정보</span></div><ChevronRight size={18} className="text-slate-300" />
+        </button>
+        <button onClick={() => setView('notices')} className="w-full bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm active:bg-slate-50 transition-colors">
+          <div className="flex items-center gap-3"><div className="bg-slate-100 p-2 rounded-lg text-slate-600"><AlertCircle size={18} /></div><span className="font-bold text-slate-700 text-sm">공지사항 & 문의</span></div><ChevronRight size={18} className="text-slate-300" />
+        </button>
       </div>
       <div className="p-6 text-center"><button className="text-xs text-slate-400 underline">로그아웃</button></div>
     </div>
@@ -1272,6 +1411,7 @@ const MySpace = ({ reviews }) => {
 const App = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [featurePage, setFeaturePage] = useState(null);
+  const [userProfile, setUserProfile] = useState({ name: '건강이 최고야', score: 85 });
    
   // 리뷰 상태 관리 (기본 더미 데이터 포함)
   const [reviews, setReviews] = useState([
@@ -1300,7 +1440,7 @@ const App = () => {
   const renderContent = () => {
     if (activeTab === 'home') return <HomePage onStart={() => setActiveTab('features')} />;
     if (activeTab === 'review') return <ReviewPage onAddReview={handleAddReview} />;
-    if (activeTab === 'myspace') return <MySpace reviews={reviews} />;
+    if (activeTab === 'myspace') return <MySpace reviews={reviews} userProfile={userProfile} onUpdateProfile={setUserProfile} />;
     
     if (activeTab === 'features') {
       if (featurePage === 'restaurant') return <RestaurantSearch onBack={() => setFeaturePage(null)} />;
